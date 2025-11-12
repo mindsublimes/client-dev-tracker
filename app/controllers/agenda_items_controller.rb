@@ -108,7 +108,14 @@ class AgendaItemsController < ApplicationController
   end
 
   def filter_params
-    params.fetch(:filters, {}).permit(:client_id, :status, :work_stream, :search)
+    permitted = params.fetch(:filters, {}).permit(:client_id, :status, :work_stream, :search).to_h
+
+    {
+      client_id: permitted['client_id'].presence&.to_i,
+      status: permitted['status'].presence,
+      work_stream: permitted['work_stream'].presence,
+      search: permitted['search'].presence
+    }
   end
 
   def prefill_params

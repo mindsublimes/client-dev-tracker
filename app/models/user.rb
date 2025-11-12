@@ -13,6 +13,8 @@ class User < ApplicationRecord
   has_many :assigned_agenda_items, class_name: 'AgendaItem', foreign_key: :assignee_id, inverse_of: :assignee, dependent: :nullify
   has_many :agenda_messages, dependent: :destroy
 
+  after_initialize :set_default_role, if: :new_record?
+
   validates :first_name, :last_name, presence: true, length: { maximum: 50 }
   validates :time_zone, presence: true
 
@@ -29,5 +31,11 @@ class User < ApplicationRecord
 
   def display_role
     role.titleize
+  end
+
+  private
+
+  def set_default_role
+    self.role ||= :viewer
   end
 end

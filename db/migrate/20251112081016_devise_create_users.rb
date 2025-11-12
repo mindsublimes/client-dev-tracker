@@ -9,7 +9,7 @@ class DeviseCreateUsers < ActiveRecord::Migration[7.1]
 
       t.string :first_name,         null: false, default: ""
       t.string :last_name,          null: false, default: ""
-      t.integer :role,              null: false, default: 0
+      t.integer :role,              null: false, default: 4
       t.boolean :active,            null: false, default: true
       t.string :time_zone,          null: false, default: "UTC"
 
