@@ -1,0 +1,82 @@
+<%= form_with(model: @agenda_item, class: 'card shadow-sm border-0') do |form| %>
+  <div class="card-body">
+    <% if @agenda_item.errors.any? %>
+      <div class="alert alert-danger">
+        <p class="fw-semibold mb-1">Please correct the following issues:</p>
+        <ul class="mb-0">
+          <% @agenda_item.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div class="row g-3">
+      <div class="col-md-6">
+        <%= form.label :client_id, 'Client', class: 'form-label' %>
+        <%= form.collection_select :client_id, @clients, :id, :name, {}, class: 'form-select', required: true %>
+      </div>
+      <div class="col-md-6">
+        <%= form.label :assignee_id, 'Assignee', class: 'form-label' %>
+        <%= form.collection_select :assignee_id, @assignees, :id, :full_name, { include_blank: 'Unassigned' }, class: 'form-select' %>
+      </div>
+      <div class="col-12">
+        <%= form.label :title, class: 'form-label' %>
+        <%= form.text_field :title, class: 'form-control', required: true %>
+      </div>
+      <div class="col-12">
+        <%= form.label :description, class: 'form-label' %>
+        <%= form.text_area :description, rows: 4, class: 'form-control' %>
+      </div>
+      <div class="col-md-4">
+        <%= form.label :work_stream, 'Work Type', class: 'form-label' %>
+        <%= form.select :work_stream, AgendaItem.work_streams.keys.map { |key| [key.titleize, key] }, {}, class: 'form-select' %>
+      </div>
+      <div class="col-md-4">
+        <%= form.label :status, class: 'form-label' %>
+        <%= form.select :status, AgendaItem.statuses.keys.map { |key| [key.titleize, key] }, {}, class: 'form-select' %>
+      </div>
+      <div class="col-md-4">
+        <%= form.label :priority_level, 'Priority', class: 'form-label' %>
+        <%= form.select :priority_level, AgendaItem.priority_levels.keys.map { |key| [key.titleize, key] }, {}, class: 'form-select' %>
+      </div>
+      <div class="col-md-4">
+        <%= form.label :complexity, class: 'form-label' %>
+        <%= form.number_field :complexity, in: 1..5, class: 'form-control' %>
+      </div>
+      <div class="col-md-4">
+        <%= form.label :due_on, 'Due date', class: 'form-label' %>
+        <%= form.date_field :due_on, class: 'form-control' %>
+      </div>
+      <div class="col-md-4">
+        <%= form.label :requested_by, class: 'form-label' %>
+        <%= form.text_field :requested_by, placeholder: 'Requester name', class: 'form-control' %>
+      </div>
+      <div class="col-md-4">
+        <%= form.label :requested_by_email, class: 'form-label' %>
+        <%= form.email_field :requested_by_email, placeholder: 'Requester email', class: 'form-control' %>
+      </div>
+      <div class="col-md-4">
+        <%= form.label :estimated_cost, class: 'form-label' %>
+        <div class="input-group">
+          <span class="input-group-text">$</span>
+          <%= form.number_field :estimated_cost, step: 0.01, class: 'form-control' %>
+        </div>
+      </div>
+      <div class="col-md-4 d-flex align-items-end">
+        <div class="form-check">
+          <%= form.check_box :paid, class: 'form-check-input' %>
+          <%= form.label :paid, 'Cost paid?', class: 'form-check-label' %>
+        </div>
+      </div>
+      <div class="col-12">
+        <%= form.label :notes, class: 'form-label' %>
+        <%= form.text_area :notes, rows: 3, class: 'form-control', placeholder: 'Internal notes for team context' %>
+      </div>
+    </div>
+  </div>
+  <div class="card-footer bg-white border-0 d-flex justify-content-between">
+    <%= link_to 'Cancel', @agenda_item.persisted? ? agenda_item_path(@agenda_item) : agenda_items_path, class: 'btn btn-outline-secondary' %>
+    <%= form.submit class: 'btn btn-primary' %>
+  </div>
+<% end %>

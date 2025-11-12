@@ -1,0 +1,64 @@
+@import 'bootstrap/scss/bootstrap';
+@import 'bootstrap-icons/font/bootstrap-icons';
+
+body {
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  background-color: #f6f8fb;
+}
+
+.bg-navy {
+  background: linear-gradient(45deg, #0b1c3d, #142c54);
+}
+
+.badge.bg-outline {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+  color: #0b1c3d;
+}
+
+.timeline {
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 12px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #e0e6f0;
+}
+
+.timeline-entry {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.timeline-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  position: absolute;
+  left: -6px;
+  top: 8px;
+  border: 2px solid #fff;
+}
+
+.timeline-body {
+  margin-left: 1.5rem;
+  background: #fff;
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 10px 30px rgba(10, 27, 57, 0.08);
+}
+
+.card.shadow-sm {
+  box-shadow: 0 10px 30px rgba(10, 27, 57, 0.08) !important;
+}
+
+.fade-out {
+  opacity: 0;
+  transition: opacity 0.2s ease-in;
+}

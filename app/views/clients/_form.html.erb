@@ -1,0 +1,52 @@
+<%= form_with(model: @client, class: 'card shadow-sm border-0') do |form| %>
+  <div class="card-body">
+    <% if @client.errors.any? %>
+      <div class="alert alert-danger">
+        <ul class="mb-0">
+          <% @client.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div class="row g-3">
+      <div class="col-md-6">
+        <%= form.label :name, class: 'form-label' %>
+        <%= form.text_field :name, class: 'form-control', required: true %>
+      </div>
+      <div class="col-md-6">
+        <%= form.label :code, class: 'form-label' %>
+        <%= form.text_field :code, class: 'form-control', required: true %>
+      </div>
+      <div class="col-md-6">
+        <%= form.label :contact_name, class: 'form-label' %>
+        <%= form.text_field :contact_name, class: 'form-control' %>
+      </div>
+      <div class="col-md-6">
+        <%= form.label :contact_email, class: 'form-label' %>
+        <%= form.email_field :contact_email, class: 'form-control' %>
+      </div>
+      <div class="col-md-4">
+        <%= form.label :priority_level, 'Priority', class: 'form-label' %>
+        <%= form.select :priority_level, Client.priority_levels.keys.map { |key| [key.titleize, key] }, {}, class: 'form-select' %>
+      </div>
+      <div class="col-md-4">
+        <%= form.label :status, class: 'form-label' %>
+        <%= form.select :status, Client.statuses.keys.map { |key| [key.titleize, key] }, {}, class: 'form-select' %>
+      </div>
+      <div class="col-md-4">
+        <%= form.label :timezone, class: 'form-label' %>
+        <%= form.time_zone_select :timezone, nil, {}, class: 'form-select' %>
+      </div>
+      <div class="col-12">
+        <%= form.label :notes, class: 'form-label' %>
+        <%= form.text_area :notes, rows: 3, class: 'form-control' %>
+      </div>
+    </div>
+  </div>
+  <div class="card-footer bg-white border-0 d-flex justify-content-between">
+    <%= link_to 'Cancel', @client.persisted? ? client_path(@client) : clients_path, class: 'btn btn-outline-secondary' %>
+    <%= form.submit class: 'btn btn-primary' %>
+  </div>
+<% end %>

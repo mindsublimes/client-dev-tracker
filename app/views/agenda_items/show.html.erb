@@ -1,0 +1,121 @@
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+  <div>
+    <p class="text-muted mb-1"><%= @agenda_item.client.name %> - <%= @agenda_item.work_stream.titleize %></p>
+    <h1 class="h3 mb-2"><%= @agenda_item.title %></h1>
+    <div class="d-flex flex-wrap gap-2">
+      <span class="badge bg-<%= @agenda_item.status_badge_color %>"><%= @agenda_item.status.titleize %></span>
+      <span class="badge bg-<%= @agenda_item.priority_badge_color %>">Priority <%= @agenda_item.priority_level.titleize %></span>
+      <span class="badge bg-secondary">Complexity <%= @agenda_item.complexity %>/5</span>
+      <span class="badge bg-light text-dark">Rank <%= @agenda_item.rank_score %></span>
+    </div>
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    <%= link_to 'Edit', edit_agenda_item_path(@agenda_item), class: 'btn btn-outline-secondary' %>
+    <% if @agenda_item.completed? %>
+      <%= button_to 'Reopen', reopen_agenda_item_path(@agenda_item), method: :patch, class: 'btn btn-warning' %>
+    <% else %>
+      <%= button_to 'Mark complete', complete_agenda_item_path(@agenda_item), method: :patch, class: 'btn btn-success' %>
+    <% end %>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Delivery details</h5>
+        <%= button_to 'Recalculate rank', rank_agenda_item_path(@agenda_item), method: :post, class: 'btn btn-sm btn-outline-primary' %>
+      </div>
+      <div class="card-body">
+        <p class="text-body-secondary"><%= simple_format(@agenda_item.description.presence || 'No description provided.') %></p>
+        <div class="row g-3 mt-3">
+          <div class="col-md-6">
+            <div class="text-muted small">Due date</div>
+            <div class="fw-semibold"><%= @agenda_item.due_on&.strftime('%B %d, %Y') || 'TBD' %></div>
+          </div>
+          <div class="col-md-6">
+            <div class="text-muted small">Assignee</div>
+            <div class="fw-semibold"><%= @agenda_item.assignee&.full_name || 'Not assigned' %></div>
+          </div>
+          <div class="col-md-6">
+            <div class="text-muted small">Requested by</div>
+            <div class="fw-semibold"><%= @agenda_item.requested_by.presence || 'Not captured' %></div>
+            <% if @agenda_item.requested_by_email.present? %>
+              <div class="small text-muted"><%= @agenda_item.requested_by_email %></div>
+            <% end %>
+          </div>
+          <div class="col-md-6">
+            <div class="text-muted small">Cost</div>
+            <% if @agenda_item.estimated_cost.present? %>
+              <div class="fw-semibold">$<%= number_with_precision(@agenda_item.estimated_cost, precision: 2) %> <span class="badge bg-<%= @agenda_item.paid? ? 'success' : 'warning' %> ms-2"><%= @agenda_item.paid? ? 'Paid' : 'Unpaid' %></span></div>
+            <% else %>
+              <div class="fw-semibold">Not estimated</div>
+            <% end %>
+          </div>
+          <div class="col-md-6">
+            <div class="text-muted small">Notes</div>
+            <div><%= simple_format(@agenda_item.notes.presence || 'No internal notes yet.') %></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-white border-0">
+        <h5 class="mb-0">Conversation</h5>
+      </div>
+      <div class="card-body">
+        <% if @messages.any? %>
+          <div class="timeline">
+            <% @messages.each do |message| %>
+              <div class="timeline-entry">
+                <div class="timeline-dot bg-primary"></div>
+                <div class="timeline-body">
+                  <div class="d-flex justify-content-between">
+                    <div>
+                      <strong><%= message.user.full_name %></strong>
+                      <span class="badge bg-light text-dark ms-2"><%= message.kind.titleize %></span>
+                    </div>
+                    <small class="text-muted"><%= l message.created_at, format: :short %></small>
+                  </div>
+                  <p class="mb-2"><%= simple_format(message.body) %></p>
+                  <% if message.files.attached? %>
+                    <div class="d-flex flex-wrap gap-2">
+                      <% message.files.each do |file| %>
+                        <%= link_to file.filename.to_s, url_for(file), class: 'btn btn-sm btn-outline-secondary' %>
+                      <% end %>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        <% else %>
+          <p class="text-muted">No updates yet. Start the conversation below.</p>
+        <% end %>
+      </div>
+      <div class="card-footer bg-white border-0">
+        <%= render 'agenda_messages/form', agenda_item: @agenda_item, message: @message %>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-white border-0">
+        <h6 class="mb-0">Rank breakdown</h6>
+      </div>
+      <div class="card-body">
+        <% if @agenda_item.rank_breakdown.present? %>
+          <% @agenda_item.rank_breakdown.each do |key, value| %>
+            <div class="d-flex justify-content-between py-2 border-bottom">
+              <span class="text-muted text-capitalize"><%= key %></span>
+              <span class="fw-semibold"><%= value %></span>
+            </div>
+          <% end %>
+        <% else %>
+          <p class="text-muted mb-0">Rank has not been calculated yet.</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
