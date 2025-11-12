@@ -1,5 +1,5 @@
 <div class="row justify-content-center mt-5">
-  <div class="col-md-5">
+  <div class="col-md-3">
     <div class="card shadow-sm border-0">
       <div class="card-body">
         <h2 class="h4 text-center mb-4">Welcome back</h2>
@@ -18,11 +18,19 @@
               <%= f.label :remember_me, class: 'form-check-label' %>
             </div>
           <% end %>
-          <%= f.submit 'Sign in', class: 'btn btn-primary w-100' %>
+          <%= f.submit 'Sign in', class: 'btn btn-new-agenda w-100' %>
         <% end %>
       </div>
       <div class="card-footer bg-white border-0 text-center">
-        <%= render 'devise/shared/links' %>
+        <% if devise_mapping.registerable? %>
+          <p class="mb-2">
+            <span class="text-muted">Don't have an account?</span>
+            <%= link_to "Sign up", new_registration_path(resource_name), class: 'text-decoration-none fw-semibold', style: 'color: #0b1c3d;' %>
+          </p>
+        <% end %>
+        <% if devise_mapping.recoverable? %>
+          <%= link_to "Forgot your password?", new_password_path(resource_name), class: 'text-decoration-none small', style: 'color: #0b1c3d;' %>
+        <% end %>
       </div>
     </div>
   </div>

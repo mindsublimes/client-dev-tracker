@@ -3,7 +3,7 @@
     <h1 class="h3 mb-0">Agenda</h1>
     <p class="text-muted mb-0">Ranked internal tracker across clients.</p>
   </div>
-  <%= link_to 'New agenda item', new_agenda_item_path, class: 'btn btn-primary' %>
+  <%= link_to 'New agenda item', new_agenda_item_path, class: 'btn btn-new-agenda' %>
 </div>
 
 <div class="card shadow-sm border-0 mb-4">
@@ -31,8 +31,8 @@
 </div>
 
 <div class="table-responsive shadow-sm rounded-3">
-  <table class="table align-middle mb-0">
-    <thead class="table-light">
+  <table class="table align-middle mb-0 agenda-table">
+    <thead class="agenda-table-header">
       <tr>
         <th scope="col">Rank</th>
         <th scope="col">Title</th>
@@ -47,12 +47,12 @@
     <tbody>
       <% @agenda_items.each do |item| %>
         <tr>
-          <td class="fw-bold text-primary"><%= item.rank_score %></td>
-          <td>
-            <div class="fw-semibold"><%= link_to item.title, agenda_item_path(item), class: 'text-decoration-none' %></div>
+          <td class="fw-bold rank-cell table-cell-small"><%= item.rank_score %></td>
+          <td class="table-cell-small">
+            <div class="fw-semibold"><%= link_to item.title, agenda_item_path(item), class: 'text-decoration-none agenda-title-link' %></div>
             <div class="small text-muted"><%= item.work_stream.titleize %></div>
           </td>
-          <td><%= item.client.name %></td>
+          <td class="table-cell-small"><%= item.client.name %></td>
           <td>
             <% if item.due_on.present? %>
               <span class="badge bg-<%= item.due_state == :overdue ? 'danger' : 'secondary' %>"><%= item.due_on.strftime('%b %d') %></span>
@@ -62,7 +62,7 @@
           </td>
           <td><span class="badge bg-<%= item.status_badge_color %>"><%= item.status.titleize %></span></td>
           <td><span class="badge bg-<%= item.priority_badge_color %>"><%= item.priority_level.titleize %></span></td>
-          <td><%= item.assignee&.full_name || 'Unassigned' %></td>
+          <td class="table-cell-small"><%= item.assignee&.full_name || 'Unassigned' %></td>
           <td class="text-end">
             <%= link_to 'View', agenda_item_path(item), class: 'btn btn-outline-secondary btn-sm' %>
           </td>

@@ -5,6 +5,8 @@ document.addEventListener('DOMContentLoaded', () => {
   setupNavToggle()
   setupAutoSubmitFilters()
   stripFilterParamsFromUrl()
+  setupSidebarToggle()
+  setupUserDropdown()
 })
 
 function setupAlertDismissals() {
@@ -57,5 +59,98 @@ function debounce(callback, delay) {
 function stripFilterParamsFromUrl() {
   if (window.location.search.length > 0) {
     window.history.replaceState({}, document.title, window.location.pathname)
+  }
+}
+
+function setupSidebarToggle() {
+  const sidebar = document.getElementById('sidebar')
+  const sidebarToggle = document.getElementById('sidebarToggle')
+  const sidebarOverlay = document.getElementById('sidebarOverlay')
+
+  if (!sidebar || !sidebarToggle) return
+
+  // Toggle sidebar on button click
+  sidebarToggle.addEventListener('click', () => {
+    sidebar.classList.toggle('active')
+    if (sidebarOverlay) {
+      sidebarOverlay.classList.toggle('active')
+    }
+  })
+
+  // Close sidebar when clicking overlay
+  if (sidebarOverlay) {
+    sidebarOverlay.addEventListener('click', () => {
+      sidebar.classList.remove('active')
+      sidebarOverlay.classList.remove('active')
+    })
+  }
+
+  // Close sidebar when clicking a link (mobile only)
+  const sidebarLinks = sidebar.querySelectorAll('.sidebar-link')
+  sidebarLinks.forEach(link => {
+    link.addEventListener('click', () => {
+      if (window.innerWidth < 992) {
+        sidebar.classList.remove('active')
+        if (sidebarOverlay) {
+          sidebarOverlay.classList.remove('active')
+        }
+      }
+    })
+  })
+
+  // Handle window resize
+  window.addEventListener('resize', () => {
+    if (window.innerWidth >= 992) {
+      sidebar.classList.remove('active')
+      if (sidebarOverlay) {
+        sidebarOverlay.classList.remove('active')
+      }
+    }
+  })
+}
+
+function setupUserDropdown() {
+  const dropdownButton = document.getElementById('userDropdown')
+  const dropdownMenu = dropdownButton?.nextElementSibling
+
+  if (!dropdownButton || !dropdownMenu) return
+
+  // Toggle dropdown on button click
+  dropdownButton.addEventListener('click', (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const isOpen = dropdownMenu.classList.contains('show')
+    
+    if (isOpen) {
+      dropdownMenu.classList.remove('show')
+      dropdownButton.setAttribute('aria-expanded', 'false')
+      document.body.style.overflow = ''
+    } else {
+      dropdownMenu.classList.add('show')
+      dropdownButton.setAttribute('aria-expanded', 'true')
+      // Prevent body scroll when dropdown is open (only on mobile)
+      if (window.innerWidth < 992) {
+        document.body.style.overflow = 'hidden'
+      }
+    }
+  })
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!dropdownButton.contains(e.target) && !dropdownMenu.contains(e.target)) {
+      dropdownMenu.classList.remove('show')
+      dropdownButton.setAttribute('aria-expanded', 'false')
+      document.body.style.overflow = ''
+    }
+  })
+
+  // Close dropdown when clicking on sign out
+  const signOutButton = dropdownMenu.querySelector('form button, .dropdown-item')
+  if (signOutButton) {
+    signOutButton.addEventListener('click', () => {
+      dropdownMenu.classList.remove('show')
+      dropdownButton.setAttribute('aria-expanded', 'false')
+      document.body.style.overflow = ''
+    })
   }
 }

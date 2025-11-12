@@ -3,7 +3,7 @@
     <p class="text-muted mb-1"><%= @client.priority_level.titleize %> client</p>
     <h1 class="h3 mb-0"><%= @client.name %></h1>
   </div>
-  <%= link_to 'Edit client', edit_client_path(@client), class: 'btn btn-outline-primary' %>
+  <%= link_to 'Edit client', edit_client_path(@client), class: 'btn btn-outline-dark' %>
 </div>
 
 <div class="row g-3 mb-4">
@@ -20,7 +20,7 @@
     <div class="card border-0 shadow-sm h-100">
       <div class="card-body">
         <div class="text-muted small">Status</div>
-        <span class="badge bg-light text-dark"><%= @client.status.titleize %></span>
+        <span class="badge client-code-badge"><%= @client.status.titleize %></span>
         <div class="text-muted small mt-2">Timezone</div>
         <div class="fw-semibold"><%= @client.timezone %></div>
       </div>
@@ -38,13 +38,13 @@
 
 <div class="d-flex justify-content-between align-items-center mb-2">
   <h4 class="h5 mb-0">Agenda items</h4>
-  <%= link_to 'New agenda item', new_agenda_item_path(agenda_item: { client_id: @client.id }), class: 'btn btn-primary btn-sm' %>
+  <%= link_to 'New agenda item', new_agenda_item_path(agenda_item: { client_id: @client.id }), class: 'btn btn-new-agenda btn-sm' %>
 </div>
 
 <div class="card shadow-sm border-0">
   <div class="table-responsive">
-    <table class="table mb-0 align-middle">
-      <thead>
+    <table class="table mb-0 align-middle agenda-table">
+      <thead class="agenda-table-header">
         <tr>
           <th>Title</th>
           <th>Due</th>
@@ -56,11 +56,11 @@
       <tbody>
         <% @agenda_items.each do |item| %>
           <tr>
-            <td><%= link_to item.title, agenda_item_path(item), class: 'text-decoration-none fw-semibold' %></td>
+            <td class="table-cell-small"><%= link_to item.title, agenda_item_path(item), class: 'text-decoration-none fw-semibold agenda-title-link' %></td>
             <td><%= item.due_on&.strftime('%b %d') || 'TBD' %></td>
             <td><span class="badge bg-<%= item.status_badge_color %>"><%= item.status.titleize %></span></td>
             <td><span class="badge bg-<%= item.priority_badge_color %>"><%= item.priority_level.titleize %></span></td>
-            <td><%= item.assignee&.full_name || 'Unassigned' %></td>
+            <td class="table-cell-small"><%= item.assignee&.full_name || 'Unassigned' %></td>
           </tr>
         <% end %>
       </tbody>

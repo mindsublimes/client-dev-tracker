@@ -1,0 +1,31 @@
+<% if user_signed_in? %>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-content">
+      <nav class="sidebar-nav">
+        <ul class="sidebar-menu">
+          <li class="sidebar-item">
+            <%= link_to dashboard_path, class: "sidebar-link #{'active' if current_page?(dashboard_path)}" do %>
+              <i class="bi bi-speedometer2"></i>
+              <span>Dashboard</span>
+            <% end %>
+          </li>
+          <li class="sidebar-item">
+            <%= link_to agenda_items_path, class: "sidebar-link #{'active' if request.path.start_with?('/agenda_items')}" do %>
+              <i class="bi bi-list-check"></i>
+              <span>Agenda</span>
+            <% end %>
+          </li>
+          <li class="sidebar-item">
+            <%= link_to clients_path, class: "sidebar-link #{'active' if request.path.start_with?('/clients')}" do %>
+              <i class="bi bi-people"></i>
+              <span>Clients</span>
+            <% end %>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </aside>
+  
+  <div class="sidebar-overlay d-lg-none" id="sidebarOverlay"></div>
+<% end %>
+

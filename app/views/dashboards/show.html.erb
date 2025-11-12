@@ -1,29 +1,49 @@
 <div class="row g-3">
   <% @status_counts.each do |status, count| %>
     <div class="col-6 col-md-3">
-      <div class="card shadow-sm border-0 h-100">
-        <div class="card-body">
-          <div class="text-muted text-uppercase small"><%= status.titleize %></div>
-          <div class="display-6 fw-semibold text-primary"><%= count %></div>
+      <div class="dashboard-stat-card h-100">
+        <div class="stat-icon">
+          <% case status %>
+          <% when 'backlog' %>
+            <i class="bi bi-list-ul"></i>
+          <% when 'scoped' %>
+            <i class="bi bi-file-text"></i>
+          <% when 'in_progress' %>
+            <i class="bi bi-arrow-repeat"></i>
+          <% when 'blocked' %>
+            <i class="bi bi-exclamation-triangle"></i>
+          <% when 'in_review' %>
+            <i class="bi bi-eye"></i>
+          <% when 'completed' %>
+            <i class="bi bi-check-circle"></i>
+          <% when 'archived' %>
+            <i class="bi bi-archive"></i>
+          <% else %>
+            <i class="bi bi-circle"></i>
+          <% end %>
+        </div>
+        <div class="stat-content">
+          <div class="stat-label"><%= status.titleize %></div>
+          <div class="stat-value"><%= count %></div>
         </div>
       </div>
     </div>
   <% end %>
 </div>
 
-<div class="row g-4 mt-3">
+<div class="row g-4 mt-2">
   <div class="col-lg-8">
     <div class="card shadow-sm border-0 h-100">
-      <div class="card-header bg-white border-0">
+      <div class="card-header bg-white section-header">
         <div class="d-flex justify-content-between align-items-center">
           <h5 class="mb-0">Priority queue</h5>
-          <%= link_to 'View agenda', agenda_items_path, class: 'btn btn-outline-primary btn-sm' %>
+          <%= link_to 'View agenda', agenda_items_path, class: 'btn btn-outline-dark btn-sm' %>
         </div>
       </div>
       <div class="card-body">
         <% if @top_agenda_items.any? %>
           <% @top_agenda_items.each do |item| %>
-            <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between py-3 border-bottom">
+            <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between py-3 border-bottom priority-queue-item">
               <div>
                 <h6 class="mb-1"><%= link_to item.title, agenda_item_path(item), class: 'link-body-emphasis text-decoration-none' %></h6>
                 <div class="text-muted small">
@@ -37,7 +57,7 @@
               </div>
               <div class="text-end mt-2 mt-lg-0">
                 <div class="small text-muted">Rank</div>
-                <div class="h4 mb-0 text-primary"><%= item.rank_score %></div>
+                <div class="h4 mb-0 rank-score"><%= item.rank_score %></div>
               </div>
             </div>
           <% end %>
@@ -49,7 +69,7 @@
   </div>
   <div class="col-lg-4">
     <div class="card shadow-sm border-0 mb-4">
-      <div class="card-header border-0 bg-white">
+      <div class="card-header bg-white section-header">
         <h6 class="mb-0 text-danger">Overdue</h6>
       </div>
       <div class="card-body">
@@ -66,14 +86,14 @@
       </div>
     </div>
     <div class="card shadow-sm border-0">
-      <div class="card-header border-0 bg-white">
-        <h6 class="mb-0 text-success">Upcoming (14 days)</h6>
+      <div class="card-header bg-white section-header">
+        <h6 class="mb-0 upcoming-header">Upcoming (14 days)</h6>
       </div>
       <div class="card-body">
         <% if @upcoming_agenda_items.any? %>
           <% @upcoming_agenda_items.each do |item| %>
             <div class="mb-3">
-              <div class="fw-semibold"><%= link_to item.title, agenda_item_path(item), class: 'text-decoration-none' %></div>
+              <div class="fw-semibold"><%= link_to item.title, agenda_item_path(item), class: 'text-decoration-none upcoming-link' %></div>
               <div class="small text-muted">Due <%= item.due_on&.strftime('%b %d') %> - <%= item.client.name %></div>
             </div>
           <% end %>
@@ -87,19 +107,19 @@
 
 <div class="card shadow-sm border-0 mt-4">
   <div class="card-header bg-white border-0">
-    <h5 class="mb-0">Client health</h5>
+    <h5 class="mb-0 client-health-heading">Client health</h5>
   </div>
   <div class="card-body">
     <div class="row g-3">
       <% @client_snapshots.each do |snapshot| %>
         <div class="col-md-6 col-lg-4">
-          <div class="border rounded-3 p-3 h-100">
+          <div class="client-health-card border rounded-3 p-3 h-100">
             <div class="d-flex justify-content-between align-items-center mb-2">
               <div>
-                <h6 class="mb-0"><%= link_to snapshot[:client].name, client_path(snapshot[:client]), class: 'text-decoration-none' %></h6>
+                <h6 class="mb-0"><%= link_to snapshot[:client].name, client_path(snapshot[:client]), class: 'text-decoration-none client-name-link' %></h6>
                 <div class="text-muted small"><%= snapshot[:client].priority_level.titleize %> client</div>
               </div>
-              <span class="badge bg-light text-dark"><%= snapshot[:client].status.titleize %></span>
+              <span class="badge client-code-badge"><%= snapshot[:client].status.titleize %></span>
             </div>
             <div class="d-flex flex-wrap gap-3">
               <div>

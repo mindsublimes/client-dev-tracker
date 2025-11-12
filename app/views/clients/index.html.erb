@@ -3,21 +3,23 @@
     <h1 class="h3 mb-0">Clients</h1>
     <p class="text-muted mb-0">Monitor health and active agenda items per client.</p>
   </div>
-  <%= link_to 'New client', new_client_path, class: 'btn btn-primary' %>
+  <%= link_to 'New client', new_client_path, class: 'btn btn-new-agenda' %>
 </div>
 
 <div class="row g-4">
   <% @clients.each do |client| %>
     <div class="col-md-6 col-lg-4">
-      <div class="card shadow-sm border-0 h-100">
-        <div class="card-body">
+      <div class="card shadow-sm border-0 h-100 client-card">
+        <div class="card-header bg-white section-header">
           <div class="d-flex justify-content-between align-items-start">
             <div>
-              <h5 class="card-title mb-0"><%= link_to client.name, client_path(client), class: 'text-decoration-none' %></h5>
-              <p class="text-muted small mb-2"><%= client.priority_level.titleize %> - <%= client.status.titleize %></p>
+              <h5 class="card-title mb-0"><%= link_to client.name, client_path(client), class: 'text-decoration-none client-name-link' %></h5>
+              <p class="text-muted small mb-0"><%= client.priority_level.titleize %> - <%= client.status.titleize %></p>
             </div>
-            <span class="badge bg-light text-dark">Code: <%= client.code %></span>
+            <span class="badge client-code-badge">Code: <%= client.code %></span>
           </div>
+        </div>
+        <div class="card-body">
           <div class="mb-3">
             <div class="text-muted small">Primary contact</div>
             <div class="fw-semibold"><%= client.contact_name.presence || 'Not set' %></div>
@@ -34,9 +36,9 @@
             </div>
           </div>
         </div>
-        <div class="card-footer bg-white border-0">
-          <%= link_to 'View', client_path(client), class: 'btn btn-outline-secondary btn-sm me-2' %>
-          <%= link_to 'Edit', edit_client_path(client), class: 'btn btn-outline-primary btn-sm' %>
+        <div class="card-footer bg-white border-0 d-flex justify-content-end gap-2">
+          <%= link_to 'View', client_path(client), class: 'btn btn-outline-dark btn-sm client-action-btn' %>
+          <%= link_to 'Edit', edit_client_path(client), class: 'btn btn-new-agenda btn-sm client-action-btn' %>
         </div>
       </div>
     </div>
