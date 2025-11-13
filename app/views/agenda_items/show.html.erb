@@ -67,7 +67,7 @@
       <div class="card-header bg-white section-header">
         <h5 class="mb-0">Conversation</h5>
       </div>
-      <div class="card-body">
+      <div class="card-body conversation-scrollable">
         <% if @messages.any? %>
           <div class="timeline">
             <% @messages.each do |message| %>
@@ -83,9 +83,18 @@
                   </div>
                   <p class="mb-2"><%= simple_format(message.body) %></p>
                   <% if message.files.attached? %>
-                    <div class="d-flex flex-wrap gap-2">
+                    <div class="d-flex flex-wrap gap-2 mt-2">
                       <% message.files.each do |file| %>
-                        <%= link_to file.filename.to_s, url_for(file), class: 'btn btn-sm btn-outline-secondary' %>
+                        <% if file.image? %>
+                          <div class="attachment-card">
+                            <a href="#" data-bs-toggle="modal" data-bs-target="#imageModal" data-full-image-url="<%= url_for(file) %>">
+                              <%= image_tag file.representation(resize_to_limit: [150, 150]), class: 'img-thumbnail', alt: file.filename.to_s %>
+                            </a>
+                            <div class="file-name"><%= file.filename.to_s %></div>
+                          </div>
+                        <% else %>
+                          <%= link_to file.filename.to_s, url_for(file), class: 'btn btn-sm btn-outline-secondary' %>
+                        <% end %>
                       <% end %>
                     </div>
                   <% end %>
@@ -152,6 +161,21 @@
         <% else %>
           <p class="text-muted mb-0">No activity logged yet.</p>
         <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Image Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="imageModalLabel">Full Size Image</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        <img src="" id="fullSizeImage" class="img-fluid" alt="Full Size Image">
       </div>
     </div>
   </div>

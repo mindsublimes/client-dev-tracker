@@ -4,8 +4,7 @@ class AgendaMessage < ApplicationRecord
 
   has_many_attached :files
 
-  enum kind: { status_update: 0, note: 1, blocker: 2, decision: 3 }
-
+  enum kind: { status_update: 0, comment: 1, issue: 2, decision: 3, question: 4, request: 5 }
   validates :body, presence: true
 
   scope :recent, -> { order(created_at: :desc) }

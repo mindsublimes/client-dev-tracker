@@ -1,4 +1,5 @@
 // Basic interactions without Stimulus/Hotwire
+import "bootstrap"
 
 document.addEventListener('DOMContentLoaded', () => {
   setupAlertDismissals()
@@ -7,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
   stripFilterParamsFromUrl()
   setupSidebarToggle()
   setupUserDropdown()
+  setupImageModal()
 })
 
 function setupAlertDismissals() {
@@ -153,4 +155,23 @@ function setupUserDropdown() {
       document.body.style.overflow = ''
     })
   }
+}
+
+function setupImageModal() {
+  var imageModal = document.getElementById('imageModal');
+  if (!imageModal) return;
+
+  imageModal.addEventListener('show.bs.modal', function (event) {
+    var button = event.relatedTarget;
+    var fullImageUrl = button.getAttribute('data-full-image-url');
+    var img = button.querySelector('img');
+    var imageTitle = img ? img.alt : 'Image';
+
+    var modalImage = imageModal.querySelector('#fullSizeImage');
+    modalImage.src = fullImageUrl;
+    modalImage.alt = imageTitle;
+
+    var modalTitle = imageModal.querySelector('.modal-title');
+    modalTitle.textContent = imageTitle;
+  });
 }
