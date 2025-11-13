@@ -1,32 +1,36 @@
 <div class="row g-3">
   <% @status_counts.each do |status, count| %>
     <div class="col-6 col-md-3">
-      <div class="dashboard-stat-card h-100">
-        <div class="stat-icon">
-          <% case status %>
-          <% when 'backlog' %>
-            <i class="bi bi-list-ul"></i>
-          <% when 'scoped' %>
-            <i class="bi bi-file-text"></i>
-          <% when 'in_progress' %>
-            <i class="bi bi-arrow-repeat"></i>
-          <% when 'blocked' %>
-            <i class="bi bi-exclamation-triangle"></i>
-          <% when 'in_review' %>
-            <i class="bi bi-eye"></i>
-          <% when 'completed' %>
-            <i class="bi bi-check-circle"></i>
-          <% when 'archived' %>
-            <i class="bi bi-archive"></i>
-          <% else %>
-            <i class="bi bi-circle"></i>
-          <% end %>
+      <%= link_to agenda_items_path(filters: { status: status }), class: 'text-decoration-none text-reset d-block' do %>
+        <div class="dashboard-stat-card h-100">
+          <div class="stat-icon">
+            <% case status %>
+            <% when 'backlog' %>
+              <i class="bi bi-list-ul"></i>
+            <% when 'scoped' %>
+              <i class="bi bi-file-text"></i>
+            <% when 'in_progress' %>
+              <i class="bi bi-arrow-repeat"></i>
+            <% when 'blocked' %>
+              <i class="bi bi-exclamation-triangle"></i>
+            <% when 'in_review' %>
+              <i class="bi bi-eye"></i>
+            <% when 'completed' %>
+              <i class="bi bi-check-circle"></i>
+            <% when 'archived' %>
+              <i class="bi bi-archive"></i>
+            <% when 'cancelled' %>
+              <i class="bi bi-x-circle"></i>
+            <% else %>
+              <i class="bi bi-circle"></i>
+            <% end %>
+          </div>
+          <div class="stat-content">
+            <div class="stat-label"><%= status.titleize %></div>
+            <div class="stat-value"><%= count %></div>
+          </div>
         </div>
-        <div class="stat-content">
-          <div class="stat-label"><%= status.titleize %></div>
-          <div class="stat-value"><%= count %></div>
-        </div>
-      </div>
+      <% end %>
     </div>
   <% end %>
 </div>
@@ -72,7 +76,7 @@
       <div class="card-header bg-white section-header">
         <h6 class="mb-0 text-danger">Overdue</h6>
       </div>
-      <div class="card-body">
+      <div class="card-body" style="overflow-y: auto; max-height: 200px; overflow-x: hidden;">
         <% if @overdue_agenda_items.any? %>
           <% @overdue_agenda_items.each do |item| %>
             <div class="mb-3">
@@ -89,7 +93,7 @@
       <div class="card-header bg-white section-header">
         <h6 class="mb-0 upcoming-header">Upcoming (14 days)</h6>
       </div>
-      <div class="card-body">
+      <div class="card-body" style="overflow-y: auto; max-height: 200px; overflow-x: hidden;">
         <% if @upcoming_agenda_items.any? %>
           <% @upcoming_agenda_items.each do |item| %>
             <div class="mb-3">

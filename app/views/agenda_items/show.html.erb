@@ -24,7 +24,6 @@
     <div class="card shadow-sm border-0 mb-4">
       <div class="card-header bg-white section-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Delivery details</h5>
-        <%= button_to 'Recalculate rank', rank_agenda_item_path(@agenda_item), method: :post, class: 'btn btn-sm btn-outline-dark' %>
       </div>
       <div class="card-body">
         <p class="text-body-secondary"><%= simple_format(@agenda_item.description.presence || 'No description provided.') %></p>
@@ -105,13 +104,23 @@
         <h6 class="mb-0">Rank breakdown</h6>
       </div>
       <div class="card-body">
-        <% if @agenda_item.rank_breakdown.present? %>
-          <% @agenda_item.rank_breakdown.each do |key, value| %>
-            <div class="d-flex justify-content-between py-2 border-bottom">
-              <span class="text-muted text-capitalize"><%= key %></span>
-              <span class="fw-semibold"><%= value %></span>
+        <% breakdown = (@agenda_item.rank_breakdown || {}).transform_keys(&:to_s) %>
+        <% display_keys = %w[priority due_date complexity status inactivity] %>
+
+        <% if breakdown.present? %>
+          <% display_keys.each do |key| %>
+            <% next unless breakdown.key?(key) %>
+            <div class="rank-breakdown-row d-flex justify-content-between py-2 border-bottom">
+              <span class="text-muted"><%= key.tr('_', ' ').titleize %></span>
+              <span class="fw-semibold"><%= breakdown[key] %></span>
             </div>
           <% end %>
+
+          <% raw_score = breakdown['raw_score'] || @agenda_item.rank_score %>
+          <div class="rank-breakdown-row rank-total d-flex justify-content-between py-2">
+            <span>Rank</span>
+            <span><%= raw_score %></span>
+          </div>
         <% else %>
           <p class="text-muted mb-0">Rank has not been calculated yet.</p>
         <% end %>

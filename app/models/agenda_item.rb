@@ -12,7 +12,8 @@ class AgendaItem < ApplicationRecord
     blocked: 3,
     in_review: 4,
     completed: 5,
-    archived: 6
+    archived: 6,
+    cancelled: 7
   }
   enum priority_level: { low: 0, normal: 1, high: 2, urgent: 3 }
 
@@ -25,7 +26,7 @@ class AgendaItem < ApplicationRecord
   before_save :apply_rank_score
 
   scope :ranked, -> { order(rank_score: :desc, due_on: :asc) }
-  scope :pending, -> { where.not(status: %i[completed archived]) }
+  scope :pending, -> { where.not(status: %i[completed archived cancelled]) }
   scope :due_within, ->(timeframe) { where(due_on: Date.current..(Date.current + timeframe)) }
 
   def pending?
@@ -40,7 +41,8 @@ class AgendaItem < ApplicationRecord
       'blocked' => 'danger',
       'in_review' => 'warning',
       'completed' => 'success',
-      'archived' => 'dark'
+      'archived' => 'dark',
+      'cancelled' => 'secondary'
     }[status]
   end
 

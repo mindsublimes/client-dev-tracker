@@ -223,6 +223,15 @@ body {
   transition: opacity 0.2s ease-in;
 }
 
+.rank-breakdown-row span:first-child {
+  font-weight: 500;
+}
+
+.rank-breakdown-row.rank-total span {
+  font-weight: 800 !important;
+  color: #0b1c3d;
+}
+
 // Sidebar Styles
 .app-wrapper {
   display: flex;
