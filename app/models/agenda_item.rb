@@ -3,6 +3,7 @@ class AgendaItem < ApplicationRecord
   belongs_to :assignee, class_name: 'User', optional: true
 
   has_many :agenda_messages, dependent: :destroy
+  has_many :activity_logs, dependent: :destroy
 
   enum work_stream: { sprint: 0, correction: 1, enhancement: 2, training: 3, support: 4 }
   enum status: {

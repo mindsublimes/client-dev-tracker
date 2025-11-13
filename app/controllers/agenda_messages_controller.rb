@@ -6,6 +6,7 @@ class AgendaMessagesController < ApplicationController
     authorize @agenda_message
 
     if @agenda_message.save
+      ActivityLogger.log_message(@agenda_message)
       redirect_to @agenda_item, success: 'Update posted.'
     else
       @message = @agenda_message

@@ -232,6 +232,14 @@ body {
   color: #0b1c3d;
 }
 
+.activity-log-entry {
+  font-size: 0.95rem;
+}
+
+.activity-log-entry .fw-semibold {
+  font-weight: 600;
+}
+
 // Sidebar Styles
 .app-wrapper {
   display: flex;

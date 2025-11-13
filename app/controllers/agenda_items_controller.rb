@@ -24,6 +24,7 @@ class AgendaItemsController < ApplicationController
     authorize @agenda_item
     @message = @agenda_item.agenda_messages.build(user: current_user)
     @messages = @agenda_item.agenda_messages.includes(:user).order(created_at: :asc)
+    @activity_logs = @agenda_item.activity_logs.includes(:user).recent
   end
 
   def new
@@ -38,6 +39,7 @@ class AgendaItemsController < ApplicationController
     authorize @agenda_item
 
     if @agenda_item.save
+      ActivityLogger.log_creation(@agenda_item, current_user)
       redirect_to @agenda_item, success: 'Agenda item created successfully.'
     else
       render :new, status: :unprocessable_entity
@@ -52,6 +54,7 @@ class AgendaItemsController < ApplicationController
     authorize @agenda_item
 
     if @agenda_item.update(agenda_item_params)
+      ActivityLogger.log_changes(@agenda_item, current_user)
       redirect_to @agenda_item, success: 'Agenda item updated.'
     else
       render :edit, status: :unprocessable_entity
@@ -68,6 +71,7 @@ class AgendaItemsController < ApplicationController
     authorize @agenda_item, :complete?
 
     if @agenda_item.update(status: :completed, completed_at: Time.current)
+      ActivityLogger.log_changes(@agenda_item, current_user)
       redirect_to @agenda_item, success: 'Agenda item marked as completed.'
     else
       redirect_to @agenda_item, alert: 'Unable to complete agenda item.'
@@ -78,6 +82,7 @@ class AgendaItemsController < ApplicationController
     authorize @agenda_item, :reopen?
 
     if @agenda_item.update(status: :in_progress, completed_at: nil)
+      ActivityLogger.log_changes(@agenda_item, current_user)
       redirect_to @agenda_item, success: 'Agenda item reopened.'
     else
       redirect_to @agenda_item, alert: 'Unable to reopen agenda item.'

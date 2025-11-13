@@ -126,5 +126,29 @@
         <% end %>
       </div>
     </div>
+
+    <div class="card shadow-sm border-0 mt-3">
+      <div class="card-header bg-white section-header">
+        <h6 class="mb-0">Activity</h6>
+      </div>
+      <div class="card-body" style="max-height: 260px; overflow-y: auto; overflow-x: hidden;">
+        <% if @activity_logs.any? %>
+          <% @activity_logs.each do |log| %>
+            <div class="activity-log-entry mb-3 pb-3 border-bottom">
+              <div class="d-flex justify-content-between small text-muted">
+                <span><%= log.created_at.strftime('%I:%M %p') %></span>
+                <span><%= log.actor_name %></span>
+              </div>
+              <div class="fw-semibold"><%= log.display_message %></div>
+              <% if log.field_name == 'message' && log.new_value.present? %>
+                <div class="text-muted small"><%= log.new_value %></div>
+              <% end %>
+            </div>
+          <% end %>
+        <% else %>
+          <p class="text-muted mb-0">No activity logged yet.</p>
+        <% end %>
+      </div>
+    </div>
   </div>
 </div>
