@@ -86,9 +86,11 @@
                     <div class="d-flex flex-wrap gap-2 mt-2">
                       <% message.files.each do |file| %>
                         <% if file.image? %>
+                          <% thumbnail_url = attachment_thumbnail_url(file) %>
+                          <% next unless thumbnail_url %>
                           <div class="attachment-card">
                             <a href="#" data-bs-toggle="modal" data-bs-target="#imageModal" data-full-image-url="<%= url_for(file) %>">
-                              <%= image_tag file.representation(resize_to_limit: [150, 150]), class: 'img-thumbnail', alt: file.filename.to_s %>
+                              <%= image_tag thumbnail_url, class: 'img-thumbnail', alt: file.filename.to_s, style: 'max-width: 150px; max-height: 150px; object-fit: cover;' %>
                             </a>
                             <div class="file-name"><%= file.filename.to_s %></div>
                           </div>

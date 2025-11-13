@@ -17,6 +17,9 @@ Internal agenda tracker built with Ruby 3.2 / Rails 7.1 / PostgreSQL. It provide
 ## Getting Started
 
 1. **Install dependencies**
+   - ImageMagick CLI utilities (needed for Active Storage thumbnails).
+     - macOS: `brew install imagemagick`
+     - Debian/Ubuntu: `sudo apt-get install imagemagick`
    ```sh
    bundle install
    npm install
