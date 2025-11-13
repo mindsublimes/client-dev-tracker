@@ -291,6 +291,7 @@ DEPENDENCIES
   devise
   image_processing (~> 1.2)
   importmap-rails
+  mini_magick
   pg (~> 1.1)
   puma (>= 5.0)
   pundit
