@@ -3,7 +3,9 @@
     <p class="text-muted mb-1"><%= @client.priority_level.titleize %> client</p>
     <h1 class="h3 mb-0"><%= @client.name %></h1>
   </div>
-  <%= link_to 'Edit client', edit_client_path(@client), class: 'btn btn-outline-dark' %>
+  <% if policy(@client).edit? %>
+    <%= link_to 'Edit client', edit_client_path(@client), class: 'btn btn-outline-dark' %>
+  <% end %>
 </div>
 
 <div class="row g-3 mb-4">
@@ -38,7 +40,9 @@
 
 <div class="d-flex justify-content-between align-items-center mb-2">
   <h4 class="h5 mb-0">Agenda items</h4>
-  <%= link_to 'New agenda item', new_agenda_item_path(agenda_item: { client_id: @client.id }), class: 'btn btn-new-agenda btn-sm' %>
+  <% if policy(AgendaItem).new? %>
+    <%= link_to 'New agenda item', new_agenda_item_path(agenda_item: { client_id: @client.id }), class: 'btn btn-new-agenda btn-sm' %>
+  <% end %>
 </div>
 
 <div class="card shadow-sm border-0">

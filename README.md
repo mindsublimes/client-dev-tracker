@@ -4,7 +4,7 @@ Internal agenda tracker built with Ruby 3.2 / Rails 7.1 / PostgreSQL. It provide
 
 ## Features
 
-- **Authentication & Roles**: Devise + Pundit. New signups default to `viewer` (read-only). Admin/lead/developer/analyst roles can manage agenda items; only admins can delete.
+- **Authentication & Roles**: Devise + Pundit. New signups default to `viewer` (read-only). Admin/lead/analyst users have full management powers, developers see only agenda items assigned to them, and the new `client` role is limited to its own agenda + dashboard (with forms auto-filling client/requester fields). Only admins can delete.
 - **Agenda Items**: Track sprint/correction/enhancement/training/support work with due date, priority, complexity, status, requester, cost, paid flag, notes, and custom rank score.
 - **Automatic Ranking**: `AgendaItems::Ranker` recalculates score based on priority, due date proximity, complexity, status, and recent activity.
 - **Dashboard**: Summary cards, priority queue, overdue/upcoming lists, and client health snapshots.

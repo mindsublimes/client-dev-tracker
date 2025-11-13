@@ -12,14 +12,19 @@
     <% end %>
 
     <div class="row g-3">
-      <div class="col-md-6">
-        <%= form.label :client_id, 'Client', class: 'form-label' %>
-        <%= form.collection_select :client_id, @clients, :id, :name, {}, class: 'form-select', required: true %>
-      </div>
-      <div class="col-md-6">
-        <%= form.label :assignee_id, 'Assignee', class: 'form-label' %>
-        <%= form.collection_select :assignee_id, @assignees, :id, :full_name, { include_blank: 'Unassigned' }, class: 'form-select' %>
-      </div>
+      <% if current_user&.client? %>
+        <%= form.hidden_field :client_id, value: current_user.client_id %>
+        <%= form.hidden_field :assignee_id %>
+      <% else %>
+        <div class="col-md-6">
+          <%= form.label :client_id, 'Client', class: 'form-label' %>
+          <%= form.collection_select :client_id, @clients, :id, :name, {}, class: 'form-select', required: true %>
+        </div>
+        <div class="col-md-6">
+          <%= form.label :assignee_id, 'Assignee', class: 'form-label' %>
+          <%= form.collection_select :assignee_id, @assignees, :id, :full_name, { include_blank: 'Unassigned' }, class: 'form-select' %>
+        </div>
+      <% end %>
       <div class="col-12">
         <%= form.label :title, class: 'form-label' %>
         <%= form.text_field :title, class: 'form-control', required: true %>
@@ -32,43 +37,54 @@
         <%= form.label :work_stream, 'Work Type', class: 'form-label' %>
         <%= form.select :work_stream, AgendaItem.work_streams.keys.map { |key| [key.titleize, key] }, {}, class: 'form-select' %>
       </div>
-      <div class="col-md-4">
-        <%= form.label :status, class: 'form-label' %>
-        <%= form.select :status, AgendaItem.statuses.keys.map { |key| [key.titleize, key] }, {}, class: 'form-select' %>
-      </div>
+      <% unless current_user&.client? %>
+        <div class="col-md-4">
+          <%= form.label :status, class: 'form-label' %>
+          <%= form.select :status, AgendaItem.statuses.keys.map { |key| [key.titleize, key] }, {}, class: 'form-select' %>
+        </div>
+      <% end %>
       <div class="col-md-4">
         <%= form.label :priority_level, 'Priority', class: 'form-label' %>
         <%= form.select :priority_level, AgendaItem.priority_levels.keys.map { |key| [key.titleize, key] }, {}, class: 'form-select' %>
       </div>
-      <div class="col-md-4">
-        <%= form.label :complexity, class: 'form-label' %>
-        <%= form.number_field :complexity, in: 1..5, class: 'form-control' %>
-      </div>
+      <% unless current_user&.client? %>
+        <div class="col-md-4">
+          <%= form.label :complexity, class: 'form-label' %>
+          <%= form.select :complexity, AgendaItem::COMPLEXITY_OPTIONS, {}, class: 'form-select' %>
+        </div>
+      <% end %>
       <div class="col-md-4">
         <%= form.label :due_on, 'Due date', class: 'form-label' %>
         <%= form.date_field :due_on, class: 'form-control' %>
       </div>
-      <div class="col-md-4">
-        <%= form.label :requested_by, class: 'form-label' %>
-        <%= form.text_field :requested_by, placeholder: 'Requester name', class: 'form-control' %>
-      </div>
-      <div class="col-md-4">
-        <%= form.label :requested_by_email, class: 'form-label' %>
-        <%= form.email_field :requested_by_email, placeholder: 'Requester email', class: 'form-control' %>
-      </div>
-      <div class="col-md-4">
-        <%= form.label :estimated_cost, class: 'form-label' %>
-        <div class="input-group">
-          <span class="input-group-text">$</span>
-          <%= form.number_field :estimated_cost, step: 0.01, class: 'form-control' %>
+      <% unless current_user&.client? %>
+        <div class="col-md-4">
+          <%= form.label :requested_by, class: 'form-label' %>
+          <%= form.text_field :requested_by, placeholder: 'Requester name', class: 'form-control' %>
         </div>
-      </div>
-      <div class="col-md-4 d-flex align-items-end">
-        <div class="form-check">
-          <%= form.check_box :paid, class: 'form-check-input' %>
-          <%= form.label :paid, 'Cost paid?', class: 'form-check-label' %>
+        <div class="col-md-4">
+          <%= form.label :requested_by_email, class: 'form-label' %>
+          <%= form.email_field :requested_by_email, placeholder: 'Requester email', class: 'form-control' %>
         </div>
-      </div>
+        <div class="col-md-4">
+          <%= form.label :estimated_cost, class: 'form-label' %>
+          <div class="input-group">
+            <span class="input-group-text">$</span>
+            <%= form.number_field :estimated_cost, step: 0.01, class: 'form-control' %>
+          </div>
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+          <div class="form-check">
+            <%= form.check_box :paid, class: 'form-check-input' %>
+            <%= form.label :paid, 'Cost paid?', class: 'form-check-label' %>
+          </div>
+        </div>
+      <% else %>
+        <%= form.hidden_field :requested_by %>
+        <%= form.hidden_field :requested_by_email %>
+        <%= form.hidden_field :estimated_cost %>
+        <%= form.hidden_field :paid %>
+      <% end %>
       <div class="col-12">
         <%= form.label :notes, class: 'form-label' %>
         <%= form.text_area :notes, rows: 3, class: 'form-control', placeholder: 'Internal notes for team context' %>

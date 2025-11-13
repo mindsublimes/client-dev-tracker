@@ -3,7 +3,9 @@
     <h1 class="h3 mb-0">Agenda</h1>
     <p class="text-muted mb-0">Ranked internal tracker across clients.</p>
   </div>
-  <%= link_to 'New agenda item', new_agenda_item_path, class: 'btn btn-new-agenda' %>
+  <% if policy(AgendaItem).new? %>
+    <%= link_to 'New agenda item', new_agenda_item_path, class: 'btn btn-new-agenda' %>
+  <% end %>
 </div>
 
 <div class="card shadow-sm border-0 mb-4">
@@ -13,11 +15,13 @@
         <%= form.label :search, 'Keyword', class: 'form-label' %>
         <%= form.text_field :search, value: @filters[:search], class: 'form-control', placeholder: 'Search title or requester' %>
       </div>
-      <div class="col-md-3">
-        <%= form.label :client_id, 'Client', class: 'form-label' %>
-        <% client_options = [['All clients', nil]] + @clients.map { |client| [client.name, client.id] } %>
-        <%= form.select :client_id, options_for_select(client_options, @filters[:client_id]), {}, class: 'form-select' %>
-      </div>
+      <% unless current_user&.client? %>
+        <div class="col-md-3">
+          <%= form.label :client_id, 'Client', class: 'form-label' %>
+          <% client_options = [['All clients', nil]] + @clients.map { |client| [client.name, client.id] } %>
+          <%= form.select :client_id, options_for_select(client_options, @filters[:client_id]), {}, class: 'form-select' %>
+        </div>
+      <% end %>
       <div class="col-md-3">
         <%= form.label :status, class: 'form-label' %>
         <%= form.select :status, options_for_select([['All statuses', nil]] + AgendaItem.statuses.keys.map { |status| [status.titleize, status] }, @filters[:status]), {}, class: 'form-select' %>

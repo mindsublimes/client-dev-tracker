@@ -2,12 +2,16 @@ class ClientsController < ApplicationController
   before_action :set_client, only: %i[show edit update]
 
   def index
+    authorize Client
     @clients = policy_scope(Client).ordered.includes(:agenda_items)
   end
 
   def show
     authorize @client
     @agenda_items = @client.agenda_items.includes(:assignee).order(rank_score: :desc)
+    if current_user&.developer?
+      @agenda_items = @agenda_items.where(assignee_id: current_user.id)
+    end
   end
 
   def new
@@ -43,7 +47,8 @@ class ClientsController < ApplicationController
   private
 
   def set_client
-    @client = policy_scope(Client).find(params[:id])
+    @client = policy_scope(Client).find_by(id: params[:id])
+    return redirect_to clients_path, alert: 'Client not accessible.' unless @client
   end
 
   def client_params

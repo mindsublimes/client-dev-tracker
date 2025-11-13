@@ -39,6 +39,20 @@ clients.each do |attrs|
   end
 end
 
+primary_client = Client.find_by!(code: 'NW')
+
+client_user = User.find_or_create_by!(email: 'client@northwind.com') do |user|
+  user.password = 'Password123!'
+  user.password_confirmation = 'Password123!'
+  user.first_name = 'Nora'
+  user.last_name = 'Client'
+  user.role = :client
+  user.time_zone = 'UTC'
+  user.client = primary_client
+end
+
+client_user.update!(client: primary_client) if client_user.client != primary_client
+
 Client.all.each do |client|
   3.times do |index|
     item = client.agenda_items.find_or_initialize_by(title: "#{client.name} Initiative #{index + 1}")

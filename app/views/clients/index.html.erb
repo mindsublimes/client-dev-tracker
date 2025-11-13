@@ -3,7 +3,9 @@
     <h1 class="h3 mb-0">Clients</h1>
     <p class="text-muted mb-0">Monitor health and active agenda items per client.</p>
   </div>
-  <%= link_to 'New client', new_client_path, class: 'btn btn-new-agenda' %>
+  <% if policy(Client).new? %>
+    <%= link_to 'New client', new_client_path, class: 'btn btn-new-agenda' %>
+  <% end %>
 </div>
 
 <div class="row g-4">
@@ -37,8 +39,10 @@
           </div>
         </div>
         <div class="card-footer bg-white border-0 d-flex justify-content-end gap-2">
-          <%= link_to 'View', client_path(client), class: 'btn btn-outline-dark btn-sm client-action-btn' %>
-          <%= link_to 'Edit', edit_client_path(client), class: 'btn btn-new-agenda btn-sm client-action-btn' %>
+          <%= link_to 'View', client_path(client), class: 'btn btn-outline-dark btn-sm client-action-btn' if policy(client).show? %>
+          <% if policy(client).edit? %>
+            <%= link_to 'Edit', edit_client_path(client), class: 'btn btn-new-agenda btn-sm client-action-btn' %>
+          <% end %>
         </div>
       </div>
     </div>

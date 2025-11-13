@@ -1,4 +1,14 @@
 class AgendaItem < ApplicationRecord
+  COMPLEXITY_OPTIONS = [
+    ['Minimal', 1],
+    ['Low', 2],
+    ['Medium', 3],
+    ['High', 4],
+    ['Severe', 5]
+  ].freeze
+
+  COMPLEXITY_LABELS = COMPLEXITY_OPTIONS.map { |label, value| [value, label] }.to_h.freeze
+
   belongs_to :client
   belongs_to :assignee, class_name: 'User', optional: true
 
@@ -54,6 +64,10 @@ class AgendaItem < ApplicationRecord
       'high' => 'warning',
       'urgent' => 'danger'
     }[priority_level]
+  end
+
+  def complexity_label
+    COMPLEXITY_LABELS.fetch(complexity, 'Medium')
   end
 
   def due_state

@@ -31,11 +31,13 @@ class AgendaItemsController < ApplicationController
     defaults = { priority_level: :normal, work_stream: :sprint, status: :backlog, complexity: 3, due_on: Date.current + 7.days }
     @agenda_item = AgendaItem.new(defaults)
     @agenda_item.assign_attributes(prefill_params)
+    apply_client_defaults(@agenda_item)
     authorize @agenda_item
   end
 
   def create
     @agenda_item = AgendaItem.new(agenda_item_params)
+    apply_client_defaults(@agenda_item)
     authorize @agenda_item
 
     if @agenda_item.save
@@ -52,6 +54,7 @@ class AgendaItemsController < ApplicationController
 
   def update
     authorize @agenda_item
+    apply_client_defaults(@agenda_item)
 
     if @agenda_item.update(agenda_item_params)
       ActivityLogger.log_changes(@agenda_item, current_user)
@@ -98,34 +101,64 @@ class AgendaItemsController < ApplicationController
   private
 
   def set_clients
-    @clients = policy_scope(Client).ordered
-    @assignees = User.active.order(:first_name, :last_name)
+    if current_user&.client? && current_user.client.present?
+      @clients = [current_user.client]
+      @assignees = []
+    else
+      @clients = policy_scope(Client).ordered
+      @assignees = User.active.order(:first_name, :last_name)
+    end
   end
 
   def set_agenda_item
-    @agenda_item = policy_scope(AgendaItem).find(params[:id])
+    @agenda_item = policy_scope(AgendaItem).find_by(id: params[:id])
+    return redirect_to agenda_items_path, alert: 'Agenda item is not accessible.' unless @agenda_item
   end
 
   def agenda_item_params
-    params.require(:agenda_item).permit(:client_id, :assignee_id, :title, :description, :work_stream, :status,
-                                        :priority_level, :complexity, :due_on, :started_on, :completed_at,
-                                        :estimated_cost, :paid, :requested_by, :requested_by_email, :notes)
+    if current_user&.client?
+      params.require(:agenda_item).permit(:title, :description, :work_stream, :priority_level, :due_on, :notes)
+    else
+      params.require(:agenda_item).permit(:client_id, :assignee_id, :title, :description, :work_stream, :status,
+                                          :priority_level, :complexity, :due_on, :started_on, :completed_at,
+                                          :estimated_cost, :paid, :requested_by, :requested_by_email, :notes)
+    end
   end
 
   def filter_params
     permitted = params.fetch(:filters, {}).permit(:client_id, :status, :work_stream, :search).to_h
 
-    {
+    filters = {
       client_id: permitted['client_id'].presence&.to_i,
       status: permitted['status'].presence,
       work_stream: permitted['work_stream'].presence,
       search: permitted['search'].presence
     }
+
+    if current_user&.client? && current_user.client_id.present?
+      filters[:client_id] = current_user.client_id
+    end
+
+    filters
   end
 
   def prefill_params
     return {} unless params[:agenda_item].present?
+    return {} if current_user&.client?
 
     params.require(:agenda_item).permit(:client_id)
+  end
+
+  def apply_client_defaults(item)
+    return unless current_user&.client?
+
+    if current_user.client_id.present?
+      item.client_id = current_user.client_id
+    end
+    item.assignee_id = nil
+    item.status ||= :backlog
+    item.complexity ||= 3
+    item.requested_by = current_user.full_name
+    item.requested_by_email = current_user.email
   end
 end

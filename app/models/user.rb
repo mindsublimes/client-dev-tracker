@@ -7,9 +7,11 @@ class User < ApplicationRecord
     lead: 1,
     developer: 2,
     analyst: 3,
-    viewer: 4
+    viewer: 4,
+    client: 5
   }
 
+  belongs_to :client, optional: true
   has_many :assigned_agenda_items, class_name: 'AgendaItem', foreign_key: :assignee_id, inverse_of: :assignee, dependent: :nullify
   has_many :agenda_messages, dependent: :destroy
 
@@ -17,6 +19,7 @@ class User < ApplicationRecord
 
   validates :first_name, :last_name, presence: true, length: { maximum: 50 }
   validates :time_zone, presence: true
+  validates :client, presence: true, if: :client?
 
   scope :active, -> { where(active: true) }
 
@@ -31,6 +34,10 @@ class User < ApplicationRecord
 
   def display_role
     role.titleize
+  end
+
+  def internal_role?
+    admin? || lead? || developer? || analyst?
   end
 
   private

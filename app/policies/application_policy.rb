@@ -50,7 +50,15 @@ class ApplicationPolicy
   private
 
   def elevated_access?
-    user.present? && !user.viewer?
+    user.present? && user.internal_role?
+  end
+
+  def manager_access?
+    user.present? && (user.admin? || user.lead? || user.analyst?)
+  end
+
+  def client_access?
+    user.present? && user.client?
   end
 
   def admin_access?

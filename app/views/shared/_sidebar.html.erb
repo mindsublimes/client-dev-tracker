@@ -15,12 +15,14 @@
               <span>Agenda</span>
             <% end %>
           </li>
-          <li class="sidebar-item">
-            <%= link_to clients_path, class: "sidebar-link #{'active' if request.path.start_with?('/clients')}" do %>
-              <i class="bi bi-people"></i>
-              <span>Clients</span>
-            <% end %>
-          </li>
+          <% unless current_user.client? %>
+            <li class="sidebar-item">
+              <%= link_to clients_path, class: "sidebar-link #{'active' if request.path.start_with?('/clients')}" do %>
+                <i class="bi bi-people"></i>
+                <span>Clients</span>
+              <% end %>
+            </li>
+          <% end %>
         </ul>
       </nav>
     </div>
@@ -28,4 +30,3 @@
   
   <div class="sidebar-overlay d-lg-none" id="sidebarOverlay"></div>
 <% end %>
-
