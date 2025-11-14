@@ -1,5 +1,5 @@
 class AgendaMessagePolicy < ApplicationPolicy
   def create?
-    elevated_access?
+    true
   end
 end

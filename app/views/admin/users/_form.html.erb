@@ -1,0 +1,63 @@
+<%= form_with(model: [:admin, @user], class: 'card shadow-sm border-0 user-form') do |form| %>
+  <div class="card-body">
+    <% if @user.errors.any? %>
+      <div class="alert alert-danger">
+        <p class="fw-semibold mb-1">Please fix the following:</p>
+        <ul class="mb-0">
+          <% @user.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div class="row g-3">
+      <div class="col-md-6">
+        <%= form.label :first_name, class: 'form-label' %>
+        <%= form.text_field :first_name, class: 'form-control', required: true %>
+      </div>
+      <div class="col-md-6">
+        <%= form.label :last_name, class: 'form-label' %>
+        <%= form.text_field :last_name, class: 'form-control', required: true %>
+      </div>
+      <div class="col-md-6">
+        <%= form.label :email, class: 'form-label' %>
+        <%= form.email_field :email, class: 'form-control', required: true %>
+      </div>
+      <div class="col-md-3">
+        <%= form.label :role, class: 'form-label' %>
+        <%= form.select :role, @roles, {}, class: 'form-select' %>
+      </div>
+      <div class="col-md-3">
+        <%= form.label :active, class: 'form-label d-block' %>
+        <div class="form-check form-switch">
+          <%= form.check_box :active, class: 'form-check-input', role: 'switch' %>
+          <%= form.label :active, @user.active? ? 'Active' : 'Inactive', class: 'form-check-label ms-2' %>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <%= form.label :time_zone, 'Time zone', class: 'form-label' %>
+        <%= form.time_zone_select :time_zone, ActiveSupport::TimeZone.all, {}, class: 'form-select' %>
+      </div>
+      <div class="col-md-6">
+        <%= form.label :client_id, 'Client (for client-role users)', class: 'form-label' %>
+        <%= form.collection_select :client_id, @clients, :id, :name, { include_blank: 'Select client' }, class: 'form-select' %>
+      </div>
+      <div class="col-md-6">
+        <%= form.label :password, class: 'form-label' %>
+        <%= form.password_field :password, class: 'form-control', autocomplete: 'new-password', required: @user.new_record? %>
+        <% unless @user.new_record? %>
+          <div class="form-text">Leave blank to keep the current password.</div>
+        <% end %>
+      </div>
+      <div class="col-md-6">
+        <%= form.label :password_confirmation, class: 'form-label' %>
+        <%= form.password_field :password_confirmation, class: 'form-control', autocomplete: 'new-password', required: @user.new_record? %>
+      </div>
+    </div>
+  </div>
+  <div class="card-footer bg-white border-0 d-flex justify-content-end gap-2 mb-3">
+    <%= link_to 'Cancel', admin_users_path, class: 'btn btn-outline-dark' %>
+    <%= form.submit class: 'btn btn-new-agenda' %>
+  </div>
+<% end %>

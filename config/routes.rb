@@ -11,6 +11,10 @@ Rails.application.routes.draw do
 
   resources :clients, except: :destroy
 
+  namespace :admin do
+    resources :users, except: %i[show destroy]
+  end
+
   resources :agenda_items do
     member do
       patch :complete

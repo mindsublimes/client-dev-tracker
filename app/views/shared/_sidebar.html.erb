@@ -22,6 +22,14 @@
                 <span>Clients</span>
               <% end %>
             </li>
+            <% if policy(User).index? %>
+              <li class="sidebar-item">
+                <%= link_to admin_users_path, class: "sidebar-link #{'active' if request.path.start_with?('/admin/users')}" do %>
+                  <i class="bi bi-person-lines-fill"></i>
+                  <span>Users</span>
+                <% end %>
+              </li>
+            <% end %>
           <% end %>
         </ul>
       </nav>
