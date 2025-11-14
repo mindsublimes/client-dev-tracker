@@ -1,5 +1,7 @@
 class Client < ApplicationRecord
   has_many :agenda_items, dependent: :destroy
+  has_many :projects, dependent: :destroy
+  has_many :sprints, through: :projects
 
   enum priority_level: { standard: 0, elevated: 1, strategic: 2 }
   enum status: { active: 0, onboarding: 1, paused: 2, inactive: 3 }
