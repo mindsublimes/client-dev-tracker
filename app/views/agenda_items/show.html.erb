@@ -41,6 +41,26 @@
             <div class="fw-semibold"><%= @agenda_item.assignee&.full_name || 'Not assigned' %></div>
           </div>
           <div class="col-md-6">
+            <div class="text-muted small">Project</div>
+            <div class="fw-semibold">
+              <% if @agenda_item.project && policy(@agenda_item.project).show? %>
+                <%= link_to @agenda_item.project.name, project_path(@agenda_item.project), class: 'text-decoration-none' %>
+              <% else %>
+                <%= @agenda_item.project&.name || 'Not linked' %>
+              <% end %>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="text-muted small">Sprint</div>
+            <div class="fw-semibold">
+              <% if @agenda_item.sprint && policy(@agenda_item.sprint).show? %>
+                <%= link_to @agenda_item.sprint.name, sprint_path(@agenda_item.sprint), class: 'text-decoration-none' %>
+              <% else %>
+                <%= @agenda_item.sprint&.name || 'Not assigned' %>
+              <% end %>
+            </div>
+          </div>
+          <div class="col-md-6">
             <div class="text-muted small">Requested by</div>
             <div class="fw-semibold"><%= @agenda_item.requested_by.presence || 'Not captured' %></div>
             <% if @agenda_item.requested_by_email.present? %>

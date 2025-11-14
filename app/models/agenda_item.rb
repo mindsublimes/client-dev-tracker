@@ -10,6 +10,8 @@ class AgendaItem < ApplicationRecord
   COMPLEXITY_LABELS = COMPLEXITY_OPTIONS.map { |label, value| [value, label] }.to_h.freeze
 
   belongs_to :client
+  belongs_to :project, optional: true
+  belongs_to :sprint
   belongs_to :assignee, class_name: 'User', optional: true
 
   has_many :agenda_messages, dependent: :destroy
@@ -32,8 +34,11 @@ class AgendaItem < ApplicationRecord
   validates :work_stream, :status, :priority_level, presence: true
   validates :complexity, inclusion: { in: 1..5 }
   validates :estimated_cost, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
+  validates :sprint, presence: true
 
   before_validation :sanitize_complexity
+  before_validation :sync_hierarchy
+  validate :hierarchy_consistency
   before_save :apply_rank_score
 
   scope :ranked, -> { order(rank_score: :desc, due_on: :asc) }
@@ -88,6 +93,28 @@ class AgendaItem < ApplicationRecord
 
   def sanitize_complexity
     self.complexity ||= 3
+  end
+
+  def sync_hierarchy
+    if sprint.present?
+      self.project = sprint.project
+      self.client = sprint.project.client if sprint.project&.client && client_id.blank?
+    elsif project.present?
+      self.client ||= project.client
+    end
+  end
+
+  def hierarchy_consistency
+    return unless client.present?
+
+    if project.present? && project.client_id != client_id
+      errors.add(:project_id, 'must belong to the selected client')
+    end
+
+    if sprint.present?
+      errors.add(:sprint_id, 'must belong to the selected client') if sprint.project&.client_id != client_id
+      errors.add(:sprint_id, 'must belong to the selected project') if project.present? && sprint.project_id != project_id
+    end
   end
 
   def apply_rank_score

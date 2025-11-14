@@ -41,6 +41,8 @@
         <th scope="col">Rank</th>
         <th scope="col">Title</th>
         <th scope="col">Client</th>
+        <th scope="col">Project</th>
+        <th scope="col">Sprint</th>
         <th scope="col">Due</th>
         <th scope="col">Status</th>
         <th scope="col">Priority</th>
@@ -57,6 +59,20 @@
             <div class="small text-muted"><%= item.work_stream.titleize %></div>
           </td>
           <td class="table-cell-small"><%= item.client.name %></td>
+          <td class="table-cell-small">
+            <% if item.project.present? && policy(item.project).show? %>
+              <%= link_to item.project.name, project_path(item.project), class: 'text-decoration-none agenda-title-link' %>
+            <% else %>
+              <span><%= item.project&.name || '—' %></span>
+            <% end %>
+          </td>
+          <td class="table-cell-small">
+            <% if item.sprint.present? && policy(item.sprint).show? %>
+              <%= link_to item.sprint.name, sprint_path(item.sprint), class: 'text-decoration-none' %>
+            <% else %>
+              <span><%= item.sprint&.name || '—' %></span>
+            <% end %>
+          </td>
           <td>
             <% if item.due_on.present? %>
               <span class="badge bg-<%= item.due_state == :overdue ? 'danger' : 'secondary' %>"><%= item.due_on.strftime('%b %d') %></span>

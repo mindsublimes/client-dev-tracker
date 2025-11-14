@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupSidebarToggle()
   setupUserDropdown()
   setupImageModal()
+  setupSprintSelectFiltering()
 })
 
 function setupAlertDismissals() {
@@ -174,4 +175,47 @@ function setupImageModal() {
     var modalTitle = imageModal.querySelector('.modal-title');
     modalTitle.textContent = imageTitle;
   });
+}
+
+function setupSprintSelectFiltering() {
+  const sprintSelect = document.querySelector('[data-behavior="sprint-select"]')
+  if (!sprintSelect) return
+
+  const clientSelect = document.querySelector('[data-behavior="client-select"]')
+
+  const filterOptions = () => {
+    const clientId = clientSelect?.value || sprintSelect.dataset.clientId
+    let hasVisible = false
+
+    Array.from(sprintSelect.options).forEach(option => {
+      if (!option.value) {
+        option.hidden = false
+        return
+      }
+
+      const matches = !clientId || option.dataset.clientId === clientId
+      option.hidden = !matches
+      if (matches) hasVisible = true
+    })
+
+    if (!clientId) {
+      sprintSelect.value = ''
+      sprintSelect.disabled = true
+      return
+    }
+
+    sprintSelect.disabled = false
+    if (!hasVisible || sprintSelect.selectedOptions[0]?.hidden) {
+      sprintSelect.value = ''
+    }
+  }
+
+  if (clientSelect) {
+    clientSelect.addEventListener('change', () => {
+      sprintSelect.dataset.clientId = clientSelect.value
+      filterOptions()
+    })
+  }
+
+  filterOptions()
 }

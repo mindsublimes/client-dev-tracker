@@ -13,18 +13,30 @@
 
     <div class="row g-3">
       <% if current_user&.client? %>
-        <%= form.hidden_field :client_id, value: current_user.client_id %>
+        <%= form.hidden_field :client_id, value: current_user.client_id, data: { behavior: 'client-select' } %>
         <%= form.hidden_field :assignee_id %>
       <% else %>
         <div class="col-md-6">
           <%= form.label :client_id, 'Client', class: 'form-label' %>
-          <%= form.collection_select :client_id, @clients, :id, :name, {}, class: 'form-select', required: true %>
+          <%= form.collection_select :client_id, @clients, :id, :name, {},
+                                     class: 'form-select', required: true,
+                                     data: { behavior: 'client-select' } %>
         </div>
         <div class="col-md-6">
           <%= form.label :assignee_id, 'Assignee', class: 'form-label' %>
-          <%= form.collection_select :assignee_id, @assignees, :id, :full_name, { include_blank: 'Unassigned' }, class: 'form-select' %>
+          <%= form.collection_select :assignee_id, @assignees, :id, :full_name,
+                                     { include_blank: 'Unassigned' }, class: 'form-select' %>
         </div>
       <% end %>
+      <div class="col-md-6">
+        <%= form.label :sprint_id, 'Sprint (Project - Sprint)', class: 'form-label' %>
+        <%= form.select :sprint_id,
+                        sprint_options_for_select(@sprints, @agenda_item.sprint_id),
+                        { include_blank: 'Select sprint' },
+                        class: 'form-select',
+                        data: { behavior: 'sprint-select', client_id: @sprint_client_id } %>
+        <div class="form-text">Sprints are scoped to the selected client.</div>
+      </div>
       <div class="col-12">
         <%= form.label :title, class: 'form-label' %>
         <%= form.text_field :title, class: 'form-control', required: true %>

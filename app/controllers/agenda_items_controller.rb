@@ -5,7 +5,7 @@ class AgendaItemsController < ApplicationController
   def index
     authorize AgendaItem
 
-    scope = policy_scope(AgendaItem.includes(:client, :assignee))
+    scope = policy_scope(AgendaItem.includes(:client, :assignee, :project, :sprint))
     @filters = filter_params
 
     scope = scope.where(client_id: @filters[:client_id]) if @filters[:client_id].present?
@@ -108,6 +108,9 @@ class AgendaItemsController < ApplicationController
       @clients = policy_scope(Client).ordered
       @assignees = User.active.order(:first_name, :last_name)
     end
+
+    @sprint_client_id = determine_form_client_id
+    @sprints = load_sprints
   end
 
   def set_agenda_item
@@ -117,11 +120,13 @@ class AgendaItemsController < ApplicationController
 
   def agenda_item_params
     if current_user&.client?
-      params.require(:agenda_item).permit(:title, :description, :work_stream, :priority_level, :due_on, :notes)
+      params.require(:agenda_item).permit(:title, :description, :work_stream, :priority_level, :due_on, :notes,
+                                          :sprint_id)
     else
       params.require(:agenda_item).permit(:client_id, :assignee_id, :title, :description, :work_stream, :status,
                                           :priority_level, :complexity, :due_on, :started_on, :completed_at,
-                                          :estimated_cost, :paid, :requested_by, :requested_by_email, :notes)
+                                          :estimated_cost, :paid, :requested_by, :requested_by_email, :notes,
+                                          :sprint_id)
     end
   end
 
@@ -152,13 +157,34 @@ class AgendaItemsController < ApplicationController
   def apply_client_defaults(item)
     return unless current_user&.client?
 
-    if current_user.client_id.present?
-      item.client_id = current_user.client_id
-    end
+    item.client_id = current_user.client_id if current_user.client_id.present?
     item.assignee_id = nil
     item.status ||= :backlog
     item.complexity ||= 3
     item.requested_by = current_user.full_name
     item.requested_by_email = current_user.email
+
+    if item.sprint.present? && item.sprint.project.client_id != current_user.client_id
+      item.sprint = nil
+      item.project = nil
+    end
+  end
+
+  def determine_form_client_id
+    return current_user.client_id.to_s if current_user&.client? && current_user.client_id.present?
+
+    params.dig(:agenda_item, :client_id).presence ||
+      @agenda_item&.client_id&.to_s ||
+      @filters&.dig(:client_id)&.to_s
+  end
+
+  def load_sprints
+    scope = Sprint.includes(project: :client).order(:name)
+
+    if current_user&.client? && current_user.client_id.present?
+      scope = scope.joins(:project).where(projects: { client_id: current_user.client_id })
+    end
+
+    scope
   end
 end
