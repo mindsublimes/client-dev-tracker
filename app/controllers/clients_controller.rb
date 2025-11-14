@@ -12,6 +12,7 @@ class ClientsController < ApplicationController
     if current_user&.developer?
       @agenda_items = @agenda_items.where(assignee_id: current_user.id)
     end
+    @projects = @client.projects.includes(:sprints, agenda_items: :sprint).order(created_at: :desc)
   end
 
   def new

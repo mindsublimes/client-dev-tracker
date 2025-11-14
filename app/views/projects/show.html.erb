@@ -1,0 +1,132 @@
+<div class="d-flex justify-content-between align-items-start mb-4">
+  <div>
+    <p class="text-muted mb-1">Client:
+      <% if policy(@project.client).show? %>
+        <%= link_to @project.client.name, client_path(@project.client), class: 'text-decoration-none' %>
+      <% else %>
+        <span><%= @project.client.name %></span>
+      <% end %>
+    </p>
+    <h1 class="h3 mb-1"><%= @project.name %></h1>
+    <div class="text-muted small">
+      <%= @project.start_date&.strftime('%B %d, %Y') || 'Start TBD' %> -
+      <%= @project.end_date&.strftime('%B %d, %Y') || 'End TBD' %>
+    </div>
+  </div>
+  <div class="text-end">
+    <div class="text-muted small">Estimated budget</div>
+    <div class="h4 mb-0"><%= @project.estimated_cost.present? ? number_to_currency(@project.estimated_cost) : 'Not estimated' %></div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small">Total tasks</div>
+        <div class="display-6"><%= @project_stats[:total] %></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small">Completed</div>
+        <div class="display-6 text-success"><%= @project_stats[:completed] %></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small">In progress</div>
+        <div class="display-6 text-primary"><%= @project_stats[:in_progress] %></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small">Blocked & overdue</div>
+        <div class="display-6 text-danger"><%= @project_stats[:blocked] + @project_stats[:overdue] %></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <div>
+        <div class="text-muted small">Overall progress</div>
+        <div class="fw-semibold"><%= @project_stats[:progress] %>% complete</div>
+      </div>
+      <div class="flex-grow-1 ms-4">
+        <div class="progress" role="progressbar" aria-valuenow="<%= @project_stats[:progress] %>" aria-valuemin="0" aria-valuemax="100" style="height: 12px;">
+          <div class="progress-bar bg-success" style="width: <%= @project_stats[:progress] %>%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="mt-3">
+      <div class="text-muted small mb-1">Key dates</div>
+      <div class="d-flex gap-4">
+        <div>
+          <div class="text-muted small">Start</div>
+          <div class="fw-semibold"><%= @project.start_date&.strftime('%b %d, %Y') || 'TBD' %></div>
+        </div>
+        <div>
+          <div class="text-muted small">End</div>
+          <div class="fw-semibold"><%= @project.end_date&.strftime('%b %d, %Y') || 'TBD' %></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-5">
+  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">Project Brief</h5>
+  </div>
+  <div class="card-body" style="max-height: 220px; overflow-y: auto;">
+    <%= simple_format(@project.description.presence || 'No description provided yet.') %>
+  </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="h5 mb-0">Sprints</h4>
+</div>
+
+<% if @sprint_summaries.any? %>
+  <div class="row g-3">
+    <% @sprint_summaries.each do |summary| %>
+      <% sprint = summary[:sprint] %>
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div>
+                <h5 class="card-title mb-1"><%= sprint.name %></h5>
+                <div class="text-muted small"><%= sprint.goal.presence || 'No goal set' %></div>
+              </div>
+              <span class="badge bg-light text-dark"><%= summary[:total] %> tasks</span>
+            </div>
+            <div class="text-muted small mb-1">Progress</div>
+            <div class="progress mb-3" role="progressbar" aria-valuenow="<%= summary[:progress] %>" aria-valuemin="0" aria-valuemax="100" style="height: 10px;">
+              <div class="progress-bar" style="width: <%= summary[:progress] %>%"></div>
+            </div>
+            <div class="d-flex justify-content-between text-muted small mb-3">
+              <span>Completed: <strong class="text-dark"><%= summary[:completed] %></strong></span>
+              <span>In progress: <strong class="text-dark"><%= summary[:in_progress] %></strong></span>
+              <span>Blocked: <strong class="text-dark"><%= summary[:blocked] %></strong></span>
+            </div>
+            <div class="mt-auto text-end">
+              <%= link_to 'View sprint', sprint_path(sprint), class: 'btn btn-outline-dark btn-sm' %>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% else %>
+  <div class="alert alert-info">No sprints defined yet for this project.</div>
+<% end %>

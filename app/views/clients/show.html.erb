@@ -38,6 +38,37 @@
   </div>
 </div>
 
+<% if @projects.any? %>
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h4 class="h5 mb-0">Projects</h4>
+  </div>
+  <div class="row g-3 mb-4">
+    <% @projects.each do |project| %>
+      <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <h5 class="card-title mb-1"><%= project.name %></h5>
+                <div class="text-muted small"><%= project.start_date&.strftime('%b %d, %Y') || 'TBD' %> - <%= project.end_date&.strftime('%b %d, %Y') || 'TBD' %></div>
+              </div>
+              <span class="badge bg-light text-dark"><%= project.sprints.count %> sprints</span>
+            </div>
+            <p class="small text-muted mt-3 mb-4"><%= truncate(project.description.to_s, length: 120) %></p>
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <div class="text-muted small">Active tasks</div>
+                <div class="fw-semibold"><%= project.agenda_items.pending.count %></div>
+              </div>
+              <%= link_to 'View project', project_path(project), class: 'btn btn-outline-dark btn-sm' %>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+
 <div class="d-flex justify-content-between align-items-center mb-2">
   <h4 class="h5 mb-0">Agenda items</h4>
   <% if policy(AgendaItem).new? %>

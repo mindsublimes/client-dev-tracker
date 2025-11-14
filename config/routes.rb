@@ -11,6 +11,9 @@ Rails.application.routes.draw do
 
   resources :clients, except: :destroy
 
+  resources :projects, only: :show
+  resources :sprints, only: :show
+
   namespace :admin do
     resources :users, except: %i[show destroy]
   end

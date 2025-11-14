@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_11_12_123000) do
+ActiveRecord::Schema[7.1].define(version: 2025_11_13_091000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -79,11 +79,15 @@ ActiveRecord::Schema[7.1].define(version: 2025_11_12_123000) do
     t.datetime "last_ranked_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "project_id"
+    t.bigint "sprint_id"
     t.index ["assignee_id"], name: "index_agenda_items_on_assignee_id"
     t.index ["client_id"], name: "index_agenda_items_on_client_id"
     t.index ["due_on"], name: "index_agenda_items_on_due_on"
     t.index ["priority_level"], name: "index_agenda_items_on_priority_level"
+    t.index ["project_id"], name: "index_agenda_items_on_project_id"
     t.index ["rank_score"], name: "index_agenda_items_on_rank_score"
+    t.index ["sprint_id"], name: "index_agenda_items_on_sprint_id"
     t.index ["status"], name: "index_agenda_items_on_status"
     t.index ["work_stream"], name: "index_agenda_items_on_work_stream"
   end
@@ -113,6 +117,32 @@ ActiveRecord::Schema[7.1].define(version: 2025_11_12_123000) do
     t.index ["code"], name: "index_clients_on_code", unique: true
   end
 
+  create_table "projects", force: :cascade do |t|
+    t.bigint "client_id", null: false
+    t.string "name", null: false
+    t.date "start_date"
+    t.date "end_date"
+    t.decimal "estimated_cost", precision: 12, scale: 2
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["client_id", "name"], name: "index_projects_on_client_id_and_name", unique: true
+    t.index ["client_id"], name: "index_projects_on_client_id"
+  end
+
+  create_table "sprints", force: :cascade do |t|
+    t.bigint "project_id", null: false
+    t.string "name", null: false
+    t.date "start_date"
+    t.date "end_date"
+    t.decimal "cost", precision: 12, scale: 2
+    t.text "goal"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id", "name"], name: "index_sprints_on_project_id_and_name", unique: true
+    t.index ["project_id"], name: "index_sprints_on_project_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
@@ -137,8 +167,12 @@ ActiveRecord::Schema[7.1].define(version: 2025_11_12_123000) do
   add_foreign_key "activity_logs", "agenda_items"
   add_foreign_key "activity_logs", "users"
   add_foreign_key "agenda_items", "clients"
+  add_foreign_key "agenda_items", "projects"
+  add_foreign_key "agenda_items", "sprints"
   add_foreign_key "agenda_items", "users", column: "assignee_id"
   add_foreign_key "agenda_messages", "agenda_items"
   add_foreign_key "agenda_messages", "users"
+  add_foreign_key "projects", "clients"
+  add_foreign_key "sprints", "projects"
   add_foreign_key "users", "clients"
 end
