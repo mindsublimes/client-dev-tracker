@@ -4,7 +4,20 @@ class SprintsController < ApplicationController
 
   def index
     authorize Sprint
-    @sprints = policy_scope(Sprint).includes(project: :client).order(:start_date)
+
+    scope = policy_scope(Sprint).includes(project: :client)
+    @filters = sprint_filter_params
+
+    scope = scope.joins(:project).where(projects: { client_id: @filters[:client_id] }) if @filters[:client_id].present?
+    scope = scope.where(project_id: @filters[:project_id]) if @filters[:project_id].present?
+    if @filters[:search].present?
+      term = "%#{@filters[:search]}%"
+      scope = scope.where('sprints.name ILIKE :term OR sprints.goal ILIKE :term', term:)
+    end
+
+    @sprints = scope.order(:start_date)
+    @clients = clients_for_filter
+    @projects_filter = projects_for_filter(@filters[:client_id])
   end
 
   def show
@@ -57,6 +70,33 @@ class SprintsController < ApplicationController
 
   def sprint_params
     params.require(:sprint).permit(:project_id, :name, :goal, :start_date, :end_date, :cost)
+  end
+
+  def sprint_filter_params
+    permitted = params.fetch(:filters, {}).permit(:client_id, :project_id, :search)
+    {
+      client_id: permitted[:client_id].presence&.to_i,
+      project_id: permitted[:project_id].presence&.to_i,
+      search: permitted[:search].presence
+    }
+  end
+
+  def clients_for_filter
+    if current_user&.client? && current_user.client.present?
+      [current_user.client]
+    else
+      policy_scope(Client).ordered
+    end
+  end
+
+  def projects_for_filter(client_id)
+    scope = policy_scope(Project).order(:name)
+    if client_id.present?
+      scope = scope.where(client_id: client_id)
+    elsif current_user&.client? && current_user.client_id.present?
+      scope = scope.where(client_id: current_user.client_id)
+    end
+    scope
   end
 
   def build_sprint_stats(items)

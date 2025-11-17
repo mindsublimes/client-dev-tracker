@@ -12,6 +12,25 @@
   <% end %>
 </div>
 
+<div class="card shadow-sm border-0 mb-4">
+  <div class="card-body">
+    <%= form_with url: projects_path, method: :get, scope: :filters, class: 'row g-3 align-items-end', html: { data: { auto_submit: true } } do |form| %>
+      <div class="col-md-4">
+        <%= form.label :search, 'Keyword', class: 'form-label' %>
+        <%= form.text_field :search, value: @filters[:search], class: 'form-control', placeholder: 'Search name or description' %>
+      </div>
+      <% if @clients.many? %>
+        <div class="col-md-4">
+          <%= form.label :client_id, 'Client', class: 'form-label' %>
+          <% client_options = [['All clients', nil]] + @clients.map { |client| [client.name, client.id] } %>
+          <%= form.select :client_id, options_for_select(client_options, @filters[:client_id]), {}, class: 'form-select' %>
+        </div>
+      <% end %>
+      <div class="col-md-4"></div>
+    <% end %>
+  </div>
+</div>
+
 <% if @projects.any? %>
   <div class="table-responsive shadow-sm rounded-3">
     <table class="table align-middle mb-0 agenda-table">

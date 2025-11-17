@@ -4,7 +4,18 @@ class ProjectsController < ApplicationController
 
   def index
     authorize Project
-    @projects = policy_scope(Project).includes(:client).order(created_at: :desc)
+
+    scope = policy_scope(Project).includes(:client)
+    @filters = project_filter_params
+
+    scope = scope.where(client_id: @filters[:client_id]) if @filters[:client_id].present?
+    if @filters[:search].present?
+      term = "%#{@filters[:search]}%"
+      scope = scope.where('projects.name ILIKE :term OR projects.description ILIKE :term', term:)
+    end
+
+    @projects = scope.order(created_at: :desc)
+    @clients = clients_for_filter
   end
 
   def show
@@ -59,6 +70,22 @@ class ProjectsController < ApplicationController
 
   def project_params
     params.require(:project).permit(:client_id, :name, :description, :estimated_cost, :start_date, :end_date)
+  end
+
+  def project_filter_params
+    permitted = params.fetch(:filters, {}).permit(:client_id, :search)
+    {
+      client_id: permitted[:client_id].presence&.to_i,
+      search: permitted[:search].presence
+    }
+  end
+
+  def clients_for_filter
+    if current_user&.client? && current_user.client.present?
+      [current_user.client]
+    else
+      policy_scope(Client).ordered
+    end
   end
 
   def build_project_stats(items)
