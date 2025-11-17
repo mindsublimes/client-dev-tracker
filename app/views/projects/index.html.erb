@@ -1,0 +1,53 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h3 mb-0">Projects</h1>
+    <p class="text-muted mb-0">Track client initiatives and their sprint progress.</p>
+  </div>
+  <% if policy(Project).new? %>
+    <%= link_to 'New project', new_project_path, class: 'btn btn-new-agenda' %>
+  <% end %>
+</div>
+
+<% if @projects.any? %>
+  <div class="table-responsive shadow-sm rounded-3">
+    <table class="table align-middle mb-0 agenda-table">
+      <thead class="agenda-table-header">
+        <tr>
+          <th scope="col">Project</th>
+          <th scope="col">Client</th>
+          <th scope="col">Timeline</th>
+          <th scope="col">Active tasks</th>
+          <th scope="col">Sprints</th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @projects.each do |project| %>
+          <tr>
+            <td class="table-cell-small">
+              <div class="fw-semibold"><%= project.name %></div>
+              <div class="small text-muted"><%= truncate(project.description.to_s, length: 60) %></div>
+            </td>
+            <td class="table-cell-small"><%= project.client.name %></td>
+            <td class="table-cell-small">
+              <%= project.start_date&.strftime('%b %d, %Y') || 'TBD' %> -
+              <%= project.end_date&.strftime('%b %d, %Y') || 'TBD' %>
+            </td>
+            <td class="table-cell-small"><%= project.agenda_items.pending.count %></td>
+            <td class="table-cell-small"><%= project.sprints.count %></td>
+            <td class="text-end">
+              <div class="d-flex justify-content-end gap-2">
+                <%= link_to 'View', project_path(project), class: 'btn btn-outline-secondary btn-sm' %>
+                <% if policy(project).edit? %>
+                  <%= link_to 'Edit', edit_project_path(project), class: 'btn btn-outline-dark btn-sm' %>
+                <% end %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% else %>
+  <div class="alert alert-info">No projects have been created yet.</div>
+<% end %>

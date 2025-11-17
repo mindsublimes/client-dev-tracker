@@ -22,6 +22,20 @@
                 <span>Clients</span>
               <% end %>
             </li>
+            <% if current_user.internal_role? %>
+              <li class="sidebar-item">
+                <%= link_to projects_path, class: "sidebar-link #{'active' if request.path.start_with?('/projects')}" do %>
+                  <i class="bi bi-kanban"></i>
+                  <span>Projects</span>
+                <% end %>
+              </li>
+              <li class="sidebar-item">
+                <%= link_to sprints_path, class: "sidebar-link #{'active' if request.path.start_with?('/sprints')}" do %>
+                  <i class="bi bi-lightning-charge"></i>
+                  <span>Sprints</span>
+                <% end %>
+              </li>
+            <% end %>
             <% if policy(User).index? %>
               <li class="sidebar-item">
                 <%= link_to admin_users_path, class: "sidebar-link #{'active' if request.path.start_with?('/admin/users')}" do %>

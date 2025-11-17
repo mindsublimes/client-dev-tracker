@@ -1,0 +1,48 @@
+<%= form_with(model: @project, class: 'card shadow-sm border-0') do |form| %>
+  <div class="card-body">
+    <% if @project.errors.any? %>
+      <div class="alert alert-danger">
+        <p class="fw-semibold mb-1">Please fix the following:</p>
+        <ul class="mb-0">
+          <% @project.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div class="row g-3">
+      <div class="col-md-6">
+        <%= form.label :client_id, 'Client', class: 'form-label' %>
+        <%= form.collection_select :client_id, @clients, :id, :name, {}, class: 'form-select', required: true %>
+      </div>
+      <div class="col-md-6">
+        <%= form.label :name, class: 'form-label' %>
+        <%= form.text_field :name, class: 'form-control', required: true %>
+      </div>
+      <div class="col-md-6">
+        <%= form.label :start_date, class: 'form-label' %>
+        <%= form.date_field :start_date, class: 'form-control' %>
+      </div>
+      <div class="col-md-6">
+        <%= form.label :end_date, class: 'form-label' %>
+        <%= form.date_field :end_date, class: 'form-control' %>
+      </div>
+      <div class="col-md-6">
+        <%= form.label :estimated_cost, class: 'form-label' %>
+        <div class="input-group">
+          <span class="input-group-text">$</span>
+          <%= form.number_field :estimated_cost, step: 0.01, class: 'form-control' %>
+        </div>
+      </div>
+      <div class="col-12">
+        <%= form.label :description, class: 'form-label' %>
+        <%= form.text_area :description, rows: 4, class: 'form-control', placeholder: 'Project scope, goals, or notes' %>
+      </div>
+    </div>
+  </div>
+  <div class="card-footer bg-white border-0 d-flex justify-content-end gap-2 mb-3">
+    <%= link_to 'Cancel', @project.persisted? ? project_path(@project) : projects_path, class: 'btn btn-outline-dark' %>
+    <%= form.submit class: 'btn btn-new-agenda' %>
+  </div>
+<% end %>

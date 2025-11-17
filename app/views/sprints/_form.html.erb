@@ -1,0 +1,48 @@
+<%= form_with(model: @sprint, class: 'card shadow-sm border-0') do |form| %>
+  <div class="card-body">
+    <% if @sprint.errors.any? %>
+      <div class="alert alert-danger">
+        <p class="fw-semibold mb-1">Please fix the following:</p>
+        <ul class="mb-0">
+          <% @sprint.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div class="row g-3">
+      <div class="col-md-6">
+        <%= form.label :project_id, 'Project', class: 'form-label' %>
+        <%= form.collection_select :project_id, @projects, :id, :name, { prompt: 'Select project' }, class: 'form-select', required: true %>
+      </div>
+      <div class="col-md-6">
+        <%= form.label :name, class: 'form-label' %>
+        <%= form.text_field :name, class: 'form-control', required: true %>
+      </div>
+      <div class="col-md-6">
+        <%= form.label :start_date, class: 'form-label' %>
+        <%= form.date_field :start_date, class: 'form-control' %>
+      </div>
+      <div class="col-md-6">
+        <%= form.label :end_date, class: 'form-label' %>
+        <%= form.date_field :end_date, class: 'form-control' %>
+      </div>
+      <div class="col-md-6">
+        <%= form.label :cost, class: 'form-label' %>
+        <div class="input-group">
+          <span class="input-group-text">$</span>
+          <%= form.number_field :cost, step: 0.01, class: 'form-control' %>
+        </div>
+      </div>
+      <div class="col-12">
+        <%= form.label :goal, class: 'form-label' %>
+        <%= form.text_area :goal, rows: 4, class: 'form-control', placeholder: 'Sprint objective or deliverables' %>
+      </div>
+    </div>
+  </div>
+  <div class="card-footer bg-white border-0 d-flex justify-content-end gap-2 mb-3">
+    <%= link_to 'Cancel', @sprint.persisted? ? sprint_path(@sprint) : sprints_path, class: 'btn btn-outline-dark' %>
+    <%= form.submit class: 'btn btn-new-agenda' %>
+  </div>
+<% end %>

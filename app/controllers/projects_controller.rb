@@ -1,5 +1,11 @@
 class ProjectsController < ApplicationController
-  before_action :set_project
+  before_action :set_project, only: %i[show edit update]
+  before_action :set_form_collections, only: %i[new create edit update]
+
+  def index
+    authorize Project
+    @projects = policy_scope(Project).includes(:client).order(created_at: :desc)
+  end
 
   def show
     authorize @project
@@ -11,10 +17,48 @@ class ProjectsController < ApplicationController
     @sprint_summaries = build_sprint_summaries(@sprints)
   end
 
+  def new
+    @project = Project.new(start_date: Date.current, end_date: Date.current + 30.days)
+    authorize @project
+  end
+
+  def create
+    @project = Project.new(project_params)
+    authorize @project
+
+    if @project.save
+      redirect_to @project, success: 'Project created successfully.'
+    else
+      render :new, status: :unprocessable_entity
+    end
+  end
+
+  def edit
+    authorize @project
+  end
+
+  def update
+    authorize @project
+
+    if @project.update(project_params)
+      redirect_to @project, success: 'Project updated.'
+    else
+      render :edit, status: :unprocessable_entity
+    end
+  end
+
   private
 
   def set_project
     @project = policy_scope(Project).includes(:client).find(params[:id])
+  end
+
+  def set_form_collections
+    @clients = policy_scope(Client).ordered
+  end
+
+  def project_params
+    params.require(:project).permit(:client_id, :name, :description, :estimated_cost, :start_date, :end_date)
   end
 
   def build_project_stats(items)
