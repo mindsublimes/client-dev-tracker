@@ -1,6 +1,6 @@
 class ProjectPolicy < ApplicationPolicy
   def index?
-    user&.internal_role?
+    user.present?
   end
 
   def show?
@@ -10,7 +10,7 @@ class ProjectPolicy < ApplicationPolicy
   end
 
   def create?
-    manager_access?
+    user&.internal_role?
   end
 
   def new?
@@ -18,7 +18,7 @@ class ProjectPolicy < ApplicationPolicy
   end
 
   def update?
-    manager_access?
+    user&.internal_role?
   end
 
   def edit?

@@ -10,7 +10,10 @@
 
 <div class="card shadow-sm border-0 mb-4">
   <div class="card-body">
-    <%= form_with url: agenda_items_path, method: :get, scope: :filters, class: 'row g-3 align-items-end auto-submit-form', html: { data: { auto_submit: true } } do |form| %>
+    <%= form_with url: agenda_items_path,
+              method: :get,
+              scope: :filters,
+              html: { class: 'row g-3 align-items-end auto-submit-form', data: { auto_submit: true } } do |form| %>
       <div class="col-md-3">
         <%= form.label :search, 'Keyword', class: 'form-label' %>
         <%= form.text_field :search, value: @filters[:search], class: 'form-control', placeholder: 'Search title or requester' %>
@@ -24,11 +27,19 @@
       <% end %>
       <div class="col-md-3">
         <%= form.label :status, class: 'form-label' %>
-        <%= form.select :status, options_for_select([['All statuses', nil]] + AgendaItem.statuses.keys.map { |status| [status.titleize, status] }, @filters[:status]), {}, class: 'form-select' %>
+        <%= form.select :status,
+                        options_for_select(
+                          [['All statuses', nil]] + AgendaItem.statuses.keys.map { |status| [status.titleize, status] },
+                          @filters[:status]
+                        ), {}, class: 'form-select' %>
       </div>
       <div class="col-md-3">
         <%= form.label :work_stream, 'Work Type', class: 'form-label' %>
-        <%= form.select :work_stream, options_for_select([['All work types', nil]] + AgendaItem.work_streams.keys.map { |stream| [stream.titleize, stream] }, @filters[:work_stream]), {}, class: 'form-select' %>
+        <%= form.select :work_stream,
+                        options_for_select(
+                          [['All work types', nil]] + AgendaItem.work_streams.keys.map { |stream| [stream.titleize, stream] },
+                          @filters[:work_stream]
+                        ), {}, class: 'form-select' %>
       </div>
     <% end %>
   </div>
