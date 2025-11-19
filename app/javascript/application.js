@@ -178,174 +178,231 @@ function setupImageModal() {
   });
 }
 
-function setupSprintSelectFiltering() {
-  const sprintSelect = document.querySelector('[data-behavior="sprint-select"]')
+function cacheSprintOptions(sprintSelect) {
+  if (sprintSelect._allSprintOptions) return
+
+  sprintSelect._allSprintOptions = Array.from(sprintSelect.options).map(option => ({
+    value: option.value,
+    text: option.textContent,
+    clientId: option.dataset.clientId || '',
+    projectId: option.dataset.projectId || '',
+    disabled: option.disabled
+  }))
+}
+
+function rebuildSprintOptions(sprintSelect, options, selectedValue) {
+  const fragment = document.createDocumentFragment()
+
+  options.forEach(optionData => {
+    const option = document.createElement('option')
+    option.value = optionData.value
+    option.textContent = optionData.text
+    if (optionData.clientId) option.dataset.clientId = optionData.clientId
+    if (optionData.projectId) option.dataset.projectId = optionData.projectId
+    option.disabled = optionData.disabled
+    option.selected = optionData.value === selectedValue
+    fragment.appendChild(option)
+  })
+
+  sprintSelect.innerHTML = ''
+  sprintSelect.appendChild(fragment)
+}
+
+function filterSprintOptions(sprintSelect, clientId) {
   if (!sprintSelect) return
 
-  const clientSelect = document.querySelector('[data-behavior="client-select"]')
+  cacheSprintOptions(sprintSelect)
+  const allOptions = sprintSelect._allSprintOptions || []
 
-  const filterOptions = () => {
-    const clientId = clientSelect?.value || sprintSelect.dataset.clientId
-    let hasVisible = false
+  const filteredOptions = allOptions.filter(option => {
+    if (option.value === '') return true
+    return clientId ? option.clientId === clientId : false
+  })
 
-    Array.from(sprintSelect.options).forEach(option => {
-      if (!option.value) {
-        option.hidden = false
-        return
-      }
+  const previousValue = sprintSelect.value
+  const hasVisible = filteredOptions.some(option => option.value)
+  const shouldDisable = !clientId || !hasVisible
+  const nextValue = filteredOptions.some(option => option.value === previousValue) ? previousValue : ''
 
-      const matches = !clientId || option.dataset.clientId === clientId
-      option.hidden = !matches
-      if (matches) hasVisible = true
-    })
+  rebuildSprintOptions(sprintSelect, filteredOptions, nextValue)
 
-    if (!clientId) {
-      sprintSelect.value = ''
-      sprintSelect.disabled = true
-      return
-    }
-
-    sprintSelect.disabled = false
-    if (!hasVisible || sprintSelect.selectedOptions[0]?.hidden) {
-      sprintSelect.value = ''
-    }
+  sprintSelect.disabled = shouldDisable
+  sprintSelect.dataset.clientId = clientId || ''
+  if (shouldDisable) {
+    sprintSelect.value = ''
   }
 
-  if (clientSelect) {
-    clientSelect.addEventListener('change', () => {
-      sprintSelect.dataset.clientId = clientSelect.value
-      filterOptions()
-      // Reinitialize Select2 after filtering
-      if (window.jQuery && window.jQuery.fn.select2) {
-        window.jQuery(sprintSelect).trigger('change.select2')
-      }
-    })
-  }
+  refreshSelect2ForElement(sprintSelect)
+}
 
-  filterOptions()
+function refreshSelect2ForElement(select) {
+  if (!isSelect2Ready()) return
+  if (select.matches('[data-no-select2]')) return
+  initializeSelect2(select)
+}
+
+function setupSprintSelectFiltering() {
+  const sprintSelects = document.querySelectorAll('[data-behavior="sprint-select"]')
+  if (!sprintSelects.length) return
+
+  sprintSelects.forEach(sprintSelect => {
+    const form = sprintSelect.closest('form')
+    const clientSelect = form?.querySelector('[data-behavior="client-select"]')
+    const initialClientId = clientSelect?.value || sprintSelect.dataset.clientId
+
+    filterSprintOptions(sprintSelect, initialClientId)
+    sprintSelect.dataset.sprintFilterInitialized = 'true'
+
+    if (!clientSelect || clientSelect.dataset.sprintFilterListener === 'true') return
+
+    const handleClientChange = () => {
+      const clientId = clientSelect.value
+      sprintSelect.dataset.clientId = clientId
+      filterSprintOptions(sprintSelect, clientId)
+    }
+
+    clientSelect.addEventListener('change', handleClientChange)
+
+    if (window.jQuery) {
+      window.jQuery(clientSelect).on('select2:select select2:clear', handleClientChange)
+    }
+
+    clientSelect.dataset.sprintFilterListener = 'true'
+  })
 }
 
 function setupSelect2() {
-  // Wait for jQuery and Select2 to be available
-  if (typeof window.jQuery === 'undefined' || !window.jQuery.fn.select2) {
-    // Retry after a short delay if Select2 isn't loaded yet
+  if (!isSelect2Ready()) {
     setTimeout(setupSelect2, 100)
     return
   }
 
+  document.querySelectorAll('select.form-select:not([data-no-select2])').forEach(select => {
+    initializeSelect2(select)
+  })
+}
+
+function isSelect2Ready() {
+  return typeof window.jQuery !== 'undefined' &&
+    typeof window.jQuery.fn !== 'undefined' &&
+    typeof window.jQuery.fn.select2 === 'function'
+}
+
+function destroySelect2(select) {
+  if (!isSelect2Ready()) return
+
+  const $select = window.jQuery(select)
+  $select.off('.select2Enhancements')
+
+  if (select._select2ResizeHandler) {
+    window.removeEventListener('resize', select._select2ResizeHandler)
+    delete select._select2ResizeHandler
+  }
+
+  if ($select.hasClass('select2-hidden-accessible')) {
+    $select.select2('destroy')
+  }
+}
+
+function initializeSelect2(select) {
+  if (!isSelect2Ready()) return
+  if (select.matches('[data-no-select2]')) return
+
   const $ = window.jQuery
+  const $select = $(select)
 
-  // Destroy existing Select2 instances to avoid duplicates
-  $('select.form-select:not([data-no-select2])').each(function() {
-    if ($(this).hasClass('select2-hidden-accessible')) {
-      $(this).select2('destroy')
+  destroySelect2(select)
+
+  $select.select2({
+    width: '100%',
+    dropdownAutoWidth: false,
+    dropdownParent: $('body'),
+    allowClear: select.hasAttribute('data-allow-clear') || !!select.querySelector('option[value=""]'),
+    placeholder: select.getAttribute('data-placeholder') || select.getAttribute('placeholder') || 'Select an option...',
+    minimumResultsForSearch: select.hasAttribute('data-search-disabled') ? Infinity : 0,
+    language: {
+      noResults: function() {
+        return 'No results found'
+      },
+      searching: function() {
+        return 'Searching...'
+      }
     }
   })
 
-  // Initialize Select2 on all select elements except those with data-no-select2
-  $('select.form-select:not([data-no-select2])').each(function() {
-    const select = this
-    const $select = $(select)
-    const $container = $select.closest('.col-md-3, .col-md-4, .col-md-6, .col-12, .col-lg-3, .col-lg-4, .col-lg-6')
-    
-    // Get the actual width of the select element's container
-    const selectWidth = $select.outerWidth() || $select.parent().width() || '100%'
+  $select.on('select2:open.select2Enhancements', function() {
+    setTimeout(function() {
+      const $dropdown = $('.select2-dropdown')
+      const $container = $select.closest('.select2-container')
+      if ($dropdown.length && $container.length) {
+        const isMobile = window.innerWidth < 992
+        const containerWidth = $container.outerWidth()
+        const containerOffset = $container.offset()
 
-    $select.select2({
-      width: '100%',
-      dropdownAutoWidth: false,
-      dropdownParent: $('body'), // Append to body to avoid overflow clipping
-      allowClear: select.hasAttribute('data-allow-clear') || select.querySelector('option[value=""]'),
-      placeholder: select.getAttribute('data-placeholder') || select.getAttribute('placeholder') || 'Select an option...',
-      minimumResultsForSearch: select.hasAttribute('data-search-disabled') ? Infinity : 0,
-      language: {
-        noResults: function() {
-          return 'No results found'
-        },
-        searching: function() {
-          return 'Searching...'
-        }
-      }
-    })
+        if (isMobile) {
+          const selectFieldLeft = containerOffset.left
+          const selectFieldWidth = $container.outerWidth()
+          const viewportWidth = window.innerWidth
+          const marginPx = 12
 
-    // Ensure dropdown width matches select width exactly and position correctly
-    $select.on('select2:open', function() {
-      setTimeout(function() {
-        const $dropdown = $('.select2-dropdown')
-        const $container = $select.closest('.select2-container')
-        if ($dropdown.length && $container.length) {
-          const isMobile = window.innerWidth < 992
-          const containerWidth = $container.outerWidth()
-          const containerOffset = $container.offset()
-          
-          if (isMobile) {
-            // On mobile, align dropdown with select field
-            const selectFieldLeft = containerOffset.left
-            const selectFieldWidth = $container.outerWidth()
-            const viewportWidth = window.innerWidth
-            // Convert 0.75rem to pixels (assuming 1rem = 16px)
-            const marginPx = 12 // 0.75rem = 12px
-            
-            // Calculate if dropdown would overflow on the right
-            const dropdownWidth = Math.min(selectFieldWidth, viewportWidth - marginPx * 2)
-            let dropdownLeft = selectFieldLeft
-            
-            // If dropdown would overflow on the right, adjust it
-            if (dropdownLeft + dropdownWidth > viewportWidth - marginPx) {
-              dropdownLeft = viewportWidth - dropdownWidth - marginPx
-            }
-            
-            // Ensure dropdown doesn't go beyond left margin
-            if (dropdownLeft < marginPx) {
-              dropdownLeft = marginPx
-            }
-            
-            $dropdown.css({
-              'width': dropdownWidth + 'px',
-              'max-width': dropdownWidth + 'px',
-              'min-width': dropdownWidth + 'px',
-              'left': dropdownLeft + 'px',
-              'right': 'auto',
-              'top': (containerOffset.top + $container.outerHeight() + 4) + 'px',
-              'z-index': 9999,
-              'position': 'fixed'
-            })
-          } else {
-            // On desktop, match select width
-            $dropdown.css({
-              'width': containerWidth + 'px',
-              'min-width': containerWidth + 'px',
-              'max-width': containerWidth + 'px',
-              'left': containerOffset.left + 'px',
-              'top': (containerOffset.top + $container.outerHeight() + 4) + 'px',
-              'z-index': 9999,
-              'position': 'absolute'
-            })
+          const dropdownWidth = Math.min(selectFieldWidth, viewportWidth - marginPx * 2)
+          let dropdownLeft = selectFieldLeft
+
+          if (dropdownLeft + dropdownWidth > viewportWidth - marginPx) {
+            dropdownLeft = viewportWidth - dropdownWidth - marginPx
           }
-        }
-      }, 10)
-    })
-    
-    // Handle window resize
-    $(window).on('resize', debounce(function() {
-      if ($select.hasClass('select2-hidden-accessible')) {
-        const $dropdown = $('.select2-dropdown')
-        if ($dropdown.is(':visible')) {
-          $select.trigger('select2:open')
+
+          if (dropdownLeft < marginPx) {
+            dropdownLeft = marginPx
+          }
+
+          $dropdown.css({
+            'width': dropdownWidth + 'px',
+            'max-width': dropdownWidth + 'px',
+            'min-width': dropdownWidth + 'px',
+            'left': dropdownLeft + 'px',
+            'right': 'auto',
+            'top': (containerOffset.top + $container.outerHeight() + 4) + 'px',
+            'z-index': 9999,
+            'position': 'fixed'
+          })
+        } else {
+          $dropdown.css({
+            'width': containerWidth + 'px',
+            'min-width': containerWidth + 'px',
+            'max-width': containerWidth + 'px',
+            'left': containerOffset.left + 'px',
+            'top': (containerOffset.top + $container.outerHeight() + 4) + 'px',
+            'z-index': 9999,
+            'position': 'absolute'
+          })
         }
       }
-    }, 250))
-
-    // Handle form auto-submit if parent form has data-auto-submit
-    const form = select.closest('form[data-auto-submit="true"]')
-    if (form) {
-      $select.on('select2:select select2:clear', function() {
-        form.requestSubmit()
-      })
-    }
+    }, 10)
   })
+
+  const resizeHandler = debounce(function() {
+    if ($select.hasClass('select2-hidden-accessible')) {
+      const $dropdown = $('.select2-dropdown')
+      if ($dropdown.is(':visible')) {
+        $select.trigger('select2:open')
+      }
+    }
+  }, 250)
+
+  select._select2ResizeHandler = resizeHandler
+  window.addEventListener('resize', resizeHandler)
+
+  const form = select.closest('form[data-auto-submit="true"]')
+  if (form) {
+    $select.on('select2:select.select2Enhancements select2:clear.select2Enhancements', function() {
+      form.requestSubmit()
+    })
+  }
 }
 
 // Reinitialize Select2 on Turbo navigation (if using Turbo)
 document.addEventListener('turbo:load', setupSelect2)
 document.addEventListener('turbo:render', setupSelect2)
+document.addEventListener('turbo:load', setupSprintSelectFiltering)
+document.addEventListener('turbo:render', setupSprintSelectFiltering)
