@@ -49,7 +49,7 @@
           <% @top_agenda_items.each do |item| %>
             <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between py-3 border-bottom priority-queue-item">
               <div>
-                <h6 class="mb-1"><%= link_to item.title, agenda_item_path(item), class: 'link-body-emphasis text-decoration-none' %></h6>
+                <h6 class="mb-1"><%= link_to item.title, agenda_item_path(item), class: 'text-decoration-none agenda-title-link' %></h6>
                 <div class="text-muted small">
                   <%= item.client.name %> - Due <%= item.due_on ? item.due_on.strftime('%b %d') : 'TBD' %>
                 </div>
@@ -76,11 +76,11 @@
       <div class="card-header bg-white section-header">
         <h6 class="mb-0 text-danger">Overdue</h6>
       </div>
-      <div class="card-body" style="overflow-y: auto; max-height: 200px; overflow-x: hidden;">
+      <div class="card-body card-body-scrollable">
         <% if @overdue_agenda_items.any? %>
           <% @overdue_agenda_items.each do |item| %>
             <div class="mb-3">
-              <div class="fw-semibold"><%= link_to item.title, agenda_item_path(item), class: 'link-danger text-decoration-none' %></div>
+              <div class="fw-semibold"><%= link_to item.title, agenda_item_path(item), class: 'text-decoration-none' %></div>
               <div class="small text-muted">Due <%= item.due_on&.strftime('%b %d') %> - <%= item.client.name %></div>
             </div>
           <% end %>
@@ -93,7 +93,7 @@
       <div class="card-header bg-white section-header">
         <h6 class="mb-0 upcoming-header">Upcoming (14 days)</h6>
       </div>
-      <div class="card-body" style="overflow-y: auto; max-height: 200px; overflow-x: hidden;">
+      <div class="card-body card-body-scrollable">
         <% if @upcoming_agenda_items.any? %>
           <% @upcoming_agenda_items.each do |item| %>
             <div class="mb-3">
@@ -117,7 +117,7 @@
     <div class="row g-3">
       <% @client_snapshots.each do |snapshot| %>
         <div class="col-md-6 col-lg-4">
-          <div class="client-health-card border rounded-3 p-3 h-100">
+          <div class="client-health-card border p-3 h-100">
             <div class="d-flex justify-content-between align-items-center mb-2">
               <div>
                 <h6 class="mb-0"><%= link_to snapshot[:client].name, client_path(snapshot[:client]), class: 'text-decoration-none client-name-link' %></h6>

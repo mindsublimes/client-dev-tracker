@@ -9,25 +9,28 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
   </head>
 
   <body class="bg-body-tertiary">
     <nav class="navbar navbar-expand-lg navbar-light bg-sidebar shadow-sm">
       <div class="container-fluid">
         <% if user_signed_in? %>
-          <button class="btn btn-link text-decoration-none sidebar-toggle-nav d-lg-none" id="sidebarToggle" aria-label="Toggle sidebar" type="button">
-            <i class="bi bi-list" style="font-size: 1.5rem; color: #0b1c3d;"></i>
+          <button class="btn btn-link text-decoration-none sidebar-toggle-nav d-lg-none w-auto" id="sidebarToggle" aria-label="Toggle sidebar" type="button">
+            <i class="bi bi-list"></i>
           </button>
         <% end %>
         <a class="navbar-brand fw-semibold" href="<%= user_signed_in? ? dashboard_path : root_path %>">DevTracker</a>
         <div class="d-flex align-items-center gap-3 ms-auto">
           <% if user_signed_in? %>
             <div class="dropdown">
-              <button class="btn btn-link text-decoration-none user-icon-btn d-flex align-items-center gap-2" type="button" id="userDropdown" aria-expanded="false">
-                <i class="bi bi-person-circle" style="font-size: 1.5rem; color: #0b1c3d;"></i>
+              <button class="btn btn-link text-decoration-none user-icon-btn d-flex align-items-center gap-2 shadow-none" type="button" id="userDropdown" aria-expanded="false">
+                <i class="bi bi-person-circle"></i>
                 <span class="user-name-text"><%= current_user.full_name.presence || current_user.email %></span>
               </button>
               <ul class="dropdown-menu dropdown-menu-start" aria-labelledby="userDropdown">

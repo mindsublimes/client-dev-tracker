@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupUserDropdown()
   setupImageModal()
   setupSprintSelectFiltering()
+  setupSelect2()
 })
 
 function setupAlertDismissals() {
@@ -214,8 +215,137 @@ function setupSprintSelectFiltering() {
     clientSelect.addEventListener('change', () => {
       sprintSelect.dataset.clientId = clientSelect.value
       filterOptions()
+      // Reinitialize Select2 after filtering
+      if (window.jQuery && window.jQuery.fn.select2) {
+        window.jQuery(sprintSelect).trigger('change.select2')
+      }
     })
   }
 
   filterOptions()
 }
+
+function setupSelect2() {
+  // Wait for jQuery and Select2 to be available
+  if (typeof window.jQuery === 'undefined' || !window.jQuery.fn.select2) {
+    // Retry after a short delay if Select2 isn't loaded yet
+    setTimeout(setupSelect2, 100)
+    return
+  }
+
+  const $ = window.jQuery
+
+  // Destroy existing Select2 instances to avoid duplicates
+  $('select.form-select:not([data-no-select2])').each(function() {
+    if ($(this).hasClass('select2-hidden-accessible')) {
+      $(this).select2('destroy')
+    }
+  })
+
+  // Initialize Select2 on all select elements except those with data-no-select2
+  $('select.form-select:not([data-no-select2])').each(function() {
+    const select = this
+    const $select = $(select)
+    const $container = $select.closest('.col-md-3, .col-md-4, .col-md-6, .col-12, .col-lg-3, .col-lg-4, .col-lg-6')
+    
+    // Get the actual width of the select element's container
+    const selectWidth = $select.outerWidth() || $select.parent().width() || '100%'
+
+    $select.select2({
+      width: '100%',
+      dropdownAutoWidth: false,
+      dropdownParent: $('body'), // Append to body to avoid overflow clipping
+      allowClear: select.hasAttribute('data-allow-clear') || select.querySelector('option[value=""]'),
+      placeholder: select.getAttribute('data-placeholder') || select.getAttribute('placeholder') || 'Select an option...',
+      minimumResultsForSearch: select.hasAttribute('data-search-disabled') ? Infinity : 0,
+      language: {
+        noResults: function() {
+          return 'No results found'
+        },
+        searching: function() {
+          return 'Searching...'
+        }
+      }
+    })
+
+    // Ensure dropdown width matches select width exactly and position correctly
+    $select.on('select2:open', function() {
+      setTimeout(function() {
+        const $dropdown = $('.select2-dropdown')
+        const $container = $select.closest('.select2-container')
+        if ($dropdown.length && $container.length) {
+          const isMobile = window.innerWidth < 992
+          const containerWidth = $container.outerWidth()
+          const containerOffset = $container.offset()
+          
+          if (isMobile) {
+            // On mobile, align dropdown with select field
+            const selectFieldLeft = containerOffset.left
+            const selectFieldWidth = $container.outerWidth()
+            const viewportWidth = window.innerWidth
+            // Convert 0.75rem to pixels (assuming 1rem = 16px)
+            const marginPx = 12 // 0.75rem = 12px
+            
+            // Calculate if dropdown would overflow on the right
+            const dropdownWidth = Math.min(selectFieldWidth, viewportWidth - marginPx * 2)
+            let dropdownLeft = selectFieldLeft
+            
+            // If dropdown would overflow on the right, adjust it
+            if (dropdownLeft + dropdownWidth > viewportWidth - marginPx) {
+              dropdownLeft = viewportWidth - dropdownWidth - marginPx
+            }
+            
+            // Ensure dropdown doesn't go beyond left margin
+            if (dropdownLeft < marginPx) {
+              dropdownLeft = marginPx
+            }
+            
+            $dropdown.css({
+              'width': dropdownWidth + 'px',
+              'max-width': dropdownWidth + 'px',
+              'min-width': dropdownWidth + 'px',
+              'left': dropdownLeft + 'px',
+              'right': 'auto',
+              'top': (containerOffset.top + $container.outerHeight() + 4) + 'px',
+              'z-index': 9999,
+              'position': 'fixed'
+            })
+          } else {
+            // On desktop, match select width
+            $dropdown.css({
+              'width': containerWidth + 'px',
+              'min-width': containerWidth + 'px',
+              'max-width': containerWidth + 'px',
+              'left': containerOffset.left + 'px',
+              'top': (containerOffset.top + $container.outerHeight() + 4) + 'px',
+              'z-index': 9999,
+              'position': 'absolute'
+            })
+          }
+        }
+      }, 10)
+    })
+    
+    // Handle window resize
+    $(window).on('resize', debounce(function() {
+      if ($select.hasClass('select2-hidden-accessible')) {
+        const $dropdown = $('.select2-dropdown')
+        if ($dropdown.is(':visible')) {
+          $select.trigger('select2:open')
+        }
+      }
+    }, 250))
+
+    // Handle form auto-submit if parent form has data-auto-submit
+    const form = select.closest('form[data-auto-submit="true"]')
+    if (form) {
+      $select.on('select2:select select2:clear', function() {
+        form.requestSubmit()
+      })
+    }
+  })
+}
+
+// Reinitialize Select2 on Turbo navigation (if using Turbo)
+document.addEventListener('turbo:load', setupSelect2)
+document.addEventListener('turbo:render', setupSelect2)
