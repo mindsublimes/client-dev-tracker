@@ -1,0 +1,89 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="h3 mb-0">Assignee Productivity</h1>
+    <p class="text-muted mb-0">Performance metrics across all projects and sprints</p>
+  </div>
+  <div>
+    <%= link_to calendars_path, class: 'btn btn-outline-dark btn-sm' do %>
+      <i class="bi bi-calendar"></i> Calendar View
+    <% end %>
+  </div>
+</div>
+
+<div class="card shadow-sm border-0">
+  <div class="card-header bg-white">
+    <h5 class="mb-0">Assignee Breakdown</h5>
+  </div>
+  <% if @productivity_data.any? %>
+    <div class="table-responsive">
+      <table class="table mb-0 align-middle">
+        <thead class="agenda-table-header">
+          <tr>
+            <th>Assignee</th>
+            <th class="text-center">Total</th>
+            <th class="text-center">Pending</th>
+            <th class="text-center">In Progress</th>
+            <th class="text-center">Completed</th>
+            <th class="text-center">Backlog</th>
+            <th class="text-center">Blocked</th>
+            <th class="text-center">Overdue</th>
+            <th class="text-center">Urgent</th>
+            <th class="text-center">Avg Rank</th>
+            <th class="text-center">Last Active</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @productivity_data.each do |row| %>
+            <tr>
+              <td class="table-cell-small">
+                <% if row[:assignee] %>
+                  <div class="fw-semibold"><%= row[:name] %></div>
+                  <div class="small text-muted"><%= row[:assignee].email %></div>
+                <% else %>
+                  <span class="text-muted"><%= row[:name] %></span>
+                <% end %>
+              </td>
+              <td class="text-center fw-semibold"><%= row[:total] %></td>
+              <td class="text-center">
+                <span class="badge bg-info"><%= row[:pending] %></span>
+              </td>
+              <td class="text-center text-primary"><%= row[:in_progress] %></td>
+              <td class="text-center text-success"><%= row[:completed] %></td>
+              <td class="text-center text-muted"><%= row[:backlog] %></td>
+              <td class="text-center text-danger"><%= row[:blocked] %></td>
+              <td class="text-center">
+                <% if row[:overdue] > 0 %>
+                  <span class="badge bg-danger"><%= row[:overdue] %></span>
+                <% else %>
+                  <span class="text-muted">0</span>
+                <% end %>
+              </td>
+              <td class="text-center">
+                <% if row[:urgent] > 0 %>
+                  <span class="badge bg-warning text-dark"><%= row[:urgent] %></span>
+                <% else %>
+                  <span class="text-muted">0</span>
+                <% end %>
+              </td>
+              <td class="text-center">
+                <span class="badge bg-secondary"><%= row[:avg_rank] %></span>
+              </td>
+              <td class="text-center small text-muted">
+                <% if row[:last_active] %>
+                  <%= time_ago_in_words(row[:last_active]) %> ago
+                <% else %>
+                  Never
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="card-body">
+      <p class="text-muted mb-0">No assignees found.</p>
+    </div>
+  <% end %>
+</div>
+
