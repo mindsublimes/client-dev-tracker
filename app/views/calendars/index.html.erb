@@ -1,0 +1,328 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="h3 mb-0">Calendar</h1>
+    <p class="text-muted mb-0">View agenda items by date</p>
+  </div>
+  <div class="d-flex gap-2">
+    <%= link_to assignee_productivity_index_path, class: 'btn btn-outline-dark btn-sm' do %>
+      <i class="bi bi-people"></i> Assignee Productivity
+    <% end %>
+    <% if @view_type == 'calendar' %>
+      <%= link_to calendars_path(view: 'gantt', filters: calendar_filter_params(@filters)), class: 'btn btn-outline-primary btn-sm' do %>
+        <i class="bi bi-bar-chart"></i> Gantt View
+      <% end %>
+    <% else %>
+      <%= link_to calendars_path(view: 'calendar', filters: calendar_filter_params(@filters)), class: 'btn btn-outline-primary btn-sm' do %>
+        <i class="bi bi-calendar"></i> Calendar View
+      <% end %>
+    <% end %>
+  </div>
+</div>
+
+<% if @view_type == 'calendar' %>
+  <!-- Calendar View -->
+  <!-- Month Navigation with Filters in Header -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white">
+      <div class="row align-items-center">
+        <div class="col-md-4">
+          <div class="d-flex align-items-center gap-3">
+            <%= link_to calendars_path(month: @current_date.prev_month.month, year: @current_date.prev_month.year, filters: calendar_filter_params(@filters), view: 'calendar'), 
+                        class: 'btn btn-outline-secondary btn-sm' do %>
+              <i class="bi bi-chevron-left"></i>
+            <% end %>
+            <h5 class="mb-0">
+              <%= @current_date.strftime('%B %Y') %>
+            </h5>
+            <%= link_to calendars_path(month: @current_date.next_month.month, year: @current_date.next_month.year, filters: calendar_filter_params(@filters), view: 'calendar'), 
+                        class: 'btn btn-outline-secondary btn-sm' do %>
+              <i class="bi bi-chevron-right"></i>
+            <% end %>
+            <%= link_to 'Today', calendars_path(month: Date.current.month, year: Date.current.year, filters: calendar_filter_params(@filters), view: 'calendar'), 
+                        class: 'btn btn-outline-primary btn-sm ms-2' %>
+          </div>
+        </div>
+        <div class="col-md-8">
+          <%= form_with url: calendars_path,
+                    method: :get,
+                    scope: :filters,
+                    html: { class: 'row g-2 align-items-end auto-submit-form', data: { auto_submit: true } } do |form| %>
+            <%= hidden_field_tag :month, @current_month %>
+            <%= hidden_field_tag :year, @current_year %>
+            <%= hidden_field_tag :view, 'calendar' %>
+            
+            <div class="col-md-3">
+              <%= form.text_field :search, value: @filters[:search], class: 'form-control form-control-sm', placeholder: 'Search...' %>
+            </div>
+            <% unless current_user&.client? %>
+              <div class="col-md-2">
+                <% client_options = [['All clients', nil]] + @clients.map { |client| [client.name, client.id] } %>
+                <%= form.select :client_id, options_for_select(client_options, @filters[:client_id]), { prompt: 'Client' }, class: 'form-select form-select-sm' %>
+              </div>
+              <div class="col-md-2">
+                <% assignee_options = [['All assignees', nil]] + @assignees.map { |user| [user.full_name, user.id] } %>
+                <%= form.select :assignee_id, options_for_select(assignee_options, @filters[:assignee_id]), { prompt: 'Assignee' }, class: 'form-select form-select-sm' %>
+              </div>
+            <% end %>
+            <div class="col-md-2">
+              <%= form.select :status,
+                              options_for_select(
+                                [['All statuses', nil]] + AgendaItem.statuses.keys.map { |status| [status.titleize, status] },
+                                @filters[:status]
+                              ), { prompt: 'Status' }, class: 'form-select form-select-sm' %>
+            </div>
+            <div class="col-md-2">
+              <%= form.select :work_stream,
+                              options_for_select(
+                                [['All work types', nil]] + AgendaItem.work_streams.keys.map { |stream| [stream.titleize, stream] },
+                                @filters[:work_stream]
+                              ), { prompt: 'Work Type' }, class: 'form-select form-select-sm' %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-body p-0">
+      <div class="calendar-grid">
+        <!-- Day headers -->
+        <div class="calendar-row calendar-header">
+          <% %w[Sun Mon Tue Wed Thu Fri Sat].each do |day| %>
+            <div class="calendar-day-header"><%= day %></div>
+          <% end %>
+        </div>
+        
+        <!-- Calendar days -->
+        <% @calendar_days.each_slice(7) do |week| %>
+          <div class="calendar-row">
+            <% week.each do |day| %>
+              <% is_current_month = day.month == @current_month %>
+              <% is_today = day == Date.current %>
+              <% day_items = @items_by_date[day] || [] %>
+              <% max_visible = 3 %>
+              <% visible_items = day_items.first(max_visible) %>
+              <% hidden_count = [day_items.size - max_visible, 0].max %>
+              
+              <div class="calendar-day <%= 'other-month' unless is_current_month %> <%= 'today' if is_today %>" 
+                   data-date="<%= day.to_s %>"
+                   data-items-count="<%= day_items.size %>"
+                   data-all-items='<%= day_items.map { |item| { id: item.id, title: item.title, href: agenda_item_path(item), client_code: item.client.code, sprint_name: item.sprint&.name || 'No Sprint', status: item.status, status_badge: item.status_badge_color } }.to_json.html_safe %>'>
+                <div class="calendar-day-number <%= 'text-muted' unless is_current_month %>">
+                  <%= day.day %>
+                </div>
+                <div class="calendar-day-items">
+                  <% visible_items.each do |item| %>
+                    <% sprint_name = item.sprint&.name || 'No Sprint' %>
+                    <% truncated_title = truncate(item.title, length: 20) %>
+                    <% display_text = "(#{item.client.code} - #{sprint_name}) - #{truncated_title}" %>
+                    <%= link_to display_text, agenda_item_path(item), 
+                                class: "calendar-item-link",
+                                title: item.title %>
+                  <% end %>
+                  <% if day_items.size > max_visible %>
+                    <button class="btn btn-sm btn-link p-0 text-decoration-none calendar-more-btn" 
+                            data-date="<%= day.to_s %>"
+                            data-bs-toggle="modal" 
+                            data-bs-target="#dayItemsModal"
+                            data-day="<%= day.strftime('%B %d, %Y') %>">
+                      View +<%= day_items.size - max_visible %>
+                    </button>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for day items -->
+  <div class="modal fade" id="dayItemsModal" tabindex="-1" aria-labelledby="dayItemsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="dayItemsModalLabel">Agenda Items</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="dayItemsModalBody">
+          <!-- Content will be loaded via JavaScript -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const modal = document.getElementById('dayItemsModal');
+      if (modal) {
+        modal.addEventListener('show.bs.modal', function(event) {
+          const button = event.relatedTarget;
+          const date = button.getAttribute('data-date');
+          const dayLabel = button.getAttribute('data-day');
+          
+          const modalTitle = modal.querySelector('#dayItemsModalLabel');
+          modalTitle.textContent = `Agenda Items - ${dayLabel}`;
+          
+          const modalBody = modal.querySelector('#dayItemsModalBody');
+          modalBody.innerHTML = '<div class="text-center py-3"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+          
+          // Get all items for this date from the day cell data attribute
+          const dayCell = document.querySelector(`.calendar-day[data-date="${date}"]`);
+          if (dayCell) {
+            try {
+              const allItemsJson = dayCell.getAttribute('data-all-items');
+              const allItems = allItemsJson ? JSON.parse(allItemsJson) : [];
+              
+              let html = '';
+              if (allItems.length > 0) {
+                html = '<div class="list-group">';
+                allItems.forEach(item => {
+                  const displayText = `(${escapeHtml(item.client_code)} - ${escapeHtml(item.sprint_name)}) - ${escapeHtml(item.title)}`;
+                  html += `<a href="${escapeHtml(item.href)}" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between align-items-start">
+                              <div class="flex-grow-1">
+                                <h6 class="mb-1">${escapeHtml(item.title)}</h6>
+                                <p class="mb-0 small text-muted">${displayText}</p>
+                              </div>
+                              <span class="badge bg-${escapeHtml(item.status_badge)} ms-2">${escapeHtml(item.status)}</span>
+                            </div>
+                          </a>`;
+                });
+                html += '</div>';
+              } else {
+                html = '<div class="alert alert-info mb-0"><i class="bi bi-info-circle"></i> No agenda items found for this day.</div>';
+              }
+              
+              modalBody.innerHTML = html;
+            } catch (e) {
+              console.error('Error parsing items:', e);
+              modalBody.innerHTML = '<div class="alert alert-warning mb-0"><i class="bi bi-exclamation-triangle"></i> Unable to load items for this day.</div>';
+            }
+          } else {
+            modalBody.innerHTML = '<div class="alert alert-warning mb-0"><i class="bi bi-exclamation-triangle"></i> Unable to find day cell.</div>';
+          }
+        });
+      }
+      
+      function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+    });
+  </script>
+
+<% else %>
+  <!-- Gantt Chart View -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+      <%= form_with url: calendars_path,
+                method: :get,
+                scope: :filters,
+                html: { class: 'row g-3 align-items-end auto-submit-form', data: { auto_submit: true } } do |form| %>
+        <%= hidden_field_tag :view, 'gantt' %>
+        
+        <div class="col-md-3">
+          <%= form.label :search, 'Keyword', class: 'form-label' %>
+          <%= form.text_field :search, value: @filters[:search], class: 'form-control', placeholder: 'Search title or requester' %>
+        </div>
+        <% unless current_user&.client? %>
+          <div class="col-md-2">
+            <%= form.label :client_id, 'Client', class: 'form-label' %>
+            <% client_options = [['All clients', nil]] + @clients.map { |client| [client.name, client.id] } %>
+            <%= form.select :client_id, options_for_select(client_options, @filters[:client_id]), {}, class: 'form-select' %>
+          </div>
+          <div class="col-md-2">
+            <%= form.label :assignee_id, 'Assignee', class: 'form-label' %>
+            <% assignee_options = [['All assignees', nil]] + @assignees.map { |user| [user.full_name, user.id] } %>
+            <%= form.select :assignee_id, options_for_select(assignee_options, @filters[:assignee_id]), {}, class: 'form-select' %>
+          </div>
+        <% end %>
+        <div class="col-md-2">
+          <%= form.label :status, class: 'form-label' %>
+          <%= form.select :status,
+                          options_for_select(
+                            [['All statuses', nil]] + AgendaItem.statuses.keys.map { |status| [status.titleize, status] },
+                            @filters[:status]
+                          ), {}, class: 'form-select' %>
+        </div>
+        <div class="col-md-2">
+          <%= form.label :work_stream, 'Work Type', class: 'form-label' %>
+          <%= form.select :work_stream,
+                          options_for_select(
+                            [['All work types', nil]] + AgendaItem.work_streams.keys.map { |stream| [stream.titleize, stream] },
+                            @filters[:work_stream]
+                          ), {}, class: 'form-select' %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-white">
+      <h5 class="mb-0">Gantt Chart</h5>
+    </div>
+    <div class="card-body">
+      <div class="gantt-container">
+        <% if @items_by_project.any? %>
+          <% @items_by_project.each do |project, items| %>
+            <div class="gantt-project-group mb-4">
+              <h6 class="gantt-project-title">
+                <% if project %>
+                  <%= link_to project.name, project_path(project), class: 'text-decoration-none' %>
+                  <span class="text-muted small">(<%= project.client.name %>)</span>
+                <% else %>
+                  <span class="text-muted">Unassigned to Project</span>
+                <% end %>
+              </h6>
+              
+              <% items_by_sprint = items.group_by(&:sprint).sort_by { |sprint, _| sprint&.name || 'Unassigned' } %>
+              <% items_by_sprint.each do |sprint, sprint_items| %>
+                <div class="gantt-sprint-group ms-3 mb-3">
+                  <div class="gantt-sprint-title small fw-semibold mb-2">
+                    <% if sprint %>
+                      <%= link_to sprint.name, sprint_path(sprint), class: 'text-decoration-none' %>
+                    <% else %>
+                      <span class="text-muted">Unassigned to Sprint</span>
+                    <% end %>
+                  </div>
+                  
+                  <div class="gantt-items">
+                    <% sprint_items.each do |item| %>
+                      <% start_date = item.started_on || item.due_on || Date.current %>
+                      <% end_date = item.due_on || item.started_on || Date.current %>
+                      <% duration = (end_date - start_date).to_i + 1 %>
+                      <% duration = [duration, 1].max %>
+                      
+                      <div class="gantt-item-row mb-2">
+                        <div class="gantt-item-label">
+                          <%= link_to truncate(item.title, length: 40), agenda_item_path(item), 
+                                      class: 'text-decoration-none',
+                                      title: item.title %>
+                          <span class="badge bg-<%= item.status_badge_color %> ms-2"><%= item.status.titleize %></span>
+                        </div>
+                        <div class="gantt-item-bar-container">
+                          <div class="gantt-item-bar bg-<%= item.status_badge_color %>" 
+                               style="margin-left: <%= ((start_date - Date.current.beginning_of_month).to_i * 20) %>px; width: <%= duration * 20 %>px;"
+                               title="<%= item.title %> - <%= start_date.strftime('%b %d') %> to <%= end_date.strftime('%b %d') %>">
+                            <span class="gantt-item-bar-text"><%= duration %>d</span>
+                          </div>
+                        </div>
+                      </div>
+                    <% end %>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+        <% else %>
+          <p class="text-muted">No agenda items with dates found.</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+

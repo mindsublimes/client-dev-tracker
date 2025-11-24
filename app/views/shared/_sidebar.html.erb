@@ -17,6 +17,22 @@
             <% end %>
           </li>
 
+          <li class="sidebar-item">
+            <%= link_to calendars_path, class: "sidebar-link #{'active' if request.path.start_with?('/calendars')}" do %>
+              <i class="bi bi-calendar"></i>
+              <span>Calendar</span>
+            <% end %>
+          </li>
+
+          <% if current_user.internal_role? %>
+            <li class="sidebar-item">
+              <%= link_to assignee_productivity_index_path, class: "sidebar-link #{'active' if request.path.start_with?('/assignee_productivity')}" do %>
+                <i class="bi bi-graph-up"></i>
+                <span>Productivity</span>
+              <% end %>
+            </li>
+          <% end %>
+
           <% unless current_user.client? %>
             <li class="sidebar-item">
               <%= link_to clients_path, class: "sidebar-link #{'active' if request.path.start_with?('/clients')}" do %>
