@@ -17,4 +17,9 @@ module ApplicationHelper
     classes << 'active fw-semibold' if current_page?(path)
     classes.join(' ')
   end
+
+  def calendar_filter_params(filters)
+    # Convert symbol keys to string keys and remove nil values for URL parameters
+    filters.to_h.transform_keys(&:to_s).compact
+  end
 end

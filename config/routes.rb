@@ -28,5 +28,8 @@ Rails.application.routes.draw do
     resources :agenda_messages, only: :create
   end
 
+  resources :calendars, only: :index
+  resources :assignee_productivity, only: :index
+
   get 'up' => 'rails/health#show', as: :rails_health_check
 end
