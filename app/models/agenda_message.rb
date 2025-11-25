@@ -10,6 +10,7 @@ class AgendaMessage < ApplicationRecord
   scope :recent, -> { order(created_at: :desc) }
 
   after_commit :refresh_agenda_rank
+  after_commit :notify_message
 
   def label
     kind.titleize
@@ -21,5 +22,9 @@ class AgendaMessage < ApplicationRecord
     agenda_item.refresh_rank!
   rescue ActiveRecord::RecordInvalid
     Rails.logger.debug("Agenda rank refresh skipped: #{agenda_item.errors.full_messages.join(', ')}")
+  end
+
+  def notify_message
+    NotificationCreator.notify_message(agenda_item, self)
   end
 end

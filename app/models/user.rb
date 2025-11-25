@@ -14,6 +14,8 @@ class User < ApplicationRecord
   belongs_to :client, optional: true
   has_many :assigned_agenda_items, class_name: 'AgendaItem', foreign_key: :assignee_id, inverse_of: :assignee, dependent: :nullify
   has_many :agenda_messages, dependent: :destroy
+  has_many :time_entries, dependent: :destroy
+  has_many :notifications, dependent: :destroy
 
   after_initialize :set_default_role, if: :new_record?
 

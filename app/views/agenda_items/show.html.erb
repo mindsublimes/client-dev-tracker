@@ -163,6 +163,92 @@
     </div>
 
     <div class="card shadow-sm border-0 mt-3">
+      <div class="card-header bg-white section-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">Time Entries</h6>
+        <div class="d-flex gap-2">
+          <% if policy(TimeEntry.new(agenda_item: @agenda_item)).create? %>
+            <% if @active_timer.present? %>
+              <%= button_to stop_agenda_item_time_entries_path(@agenda_item), method: :post, 
+                  class: 'btn btn-sm btn-timer-stop', 
+                  form: { class: 'd-inline' } do %>
+                <i class="bi bi-stop-circle"></i> Stop Timer
+              <% end %>
+            <% else %>
+              <%= button_to start_agenda_item_time_entries_path(@agenda_item), method: :post, 
+                  class: 'btn btn-sm btn-timer-start',
+                  form: { class: 'd-inline' } do %>
+                <i class="bi bi-play-circle"></i> Start Timer
+              <% end %>
+            <% end %>
+            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#timeEntryModal">
+              <i class="bi bi-plus-circle"></i> Log Time
+            </button>
+          <% end %>
+        </div>
+      </div>
+      <div class="card-body">
+        <% time_entries = @agenda_item.time_entries.recent %>
+        <% if time_entries.any? %>
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Hours</th>
+                  <th>User</th>
+                  <th>Notes</th>
+                  <% if policy(TimeEntry.new(agenda_item: @agenda_item)).destroy? %>
+                    <th></th>
+                  <% end %>
+                </tr>
+              </thead>
+              <tbody>
+                <% time_entries.each do |entry| %>
+                  <tr class="<%= 'table-warning' if entry.active? %>">
+                    <td>
+                      <%= entry.date.strftime('%b %d, %Y') %>
+                      <% if entry.active? %>
+                        <span class="badge bg-warning ms-2">Running</span>
+                      <% end %>
+                    </td>
+                    <td>
+                      <% if entry.active? %>
+                        <span class="text-muted">-</span>
+                      <% else %>
+                        <%= number_with_precision(entry.hours || entry.calculate_hours, precision: 2) %>
+                      <% end %>
+                    </td>
+                    <td><%= entry.user.full_name %></td>
+                    <td><%= entry.notes.presence || '-' %></td>
+                    <% if policy(entry).destroy? %>
+                      <td>
+                        <%= button_to agenda_item_time_entry_path(@agenda_item, entry), method: :delete, 
+                            class: 'btn btn-sm btn-outline-danger', 
+                            data: { confirm: 'Are you sure?' },
+                            form: { class: 'd-inline' } do %>
+                          <i class="bi bi-trash"></i>
+                        <% end %>
+                      </td>
+                    <% end %>
+                  </tr>
+                <% end %>
+              </tbody>
+              <tfoot>
+                <tr class="table-secondary">
+                  <td><strong>Total</strong></td>
+                  <td><strong><%= number_with_precision(time_entries.where.not(hours: nil).sum(:hours), precision: 2) %></strong></td>
+                  <td colspan="<%= policy(TimeEntry.new(agenda_item: @agenda_item)).destroy? ? 3 : 2 %>"></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        <% else %>
+          <p class="text-muted mb-0">No time entries logged yet.</p>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mt-3">
       <div class="card-header bg-white section-header">
         <h6 class="mb-0">Activity</h6>
       </div>
@@ -182,6 +268,52 @@
           <% end %>
         <% else %>
           <p class="text-muted mb-0">No activity logged yet.</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Time Entry Modal -->
+<div class="modal fade" id="timeEntryModal" tabindex="-1" aria-labelledby="timeEntryModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="timeEntryModalLabel">Log Time</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <%= form_with(model: [@agenda_item, @agenda_item.time_entries.build], class: 'row g-3') do |form| %>
+          <div class="col-md-6">
+            <%= form.label :hours, class: 'form-label' %>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-clock"></i></span>
+              <%= form.number_field :hours, step: 0.25, min: 0.25, class: 'form-control', placeholder: '0.00' %>
+            </div>
+            <div class="form-text">Enter duration in hours (e.g. 1.5) or use timer below</div>
+          </div>
+          <div class="col-md-6">
+            <%= form.label :date, class: 'form-label' %>
+            <%= form.date_field :date, value: Date.current, class: 'form-control', required: true %>
+          </div>
+          <div class="col-md-6">
+            <%= form.label :start_time, 'Start Time', class: 'form-label' %>
+            <%= form.datetime_local_field :start_time, class: 'form-control' %>
+            <div class="form-text">Optional: For timer-based entries</div>
+          </div>
+          <div class="col-md-6">
+            <%= form.label :end_time, 'End Time', class: 'form-label' %>
+            <%= form.datetime_local_field :end_time, class: 'form-control' %>
+            <div class="form-text">Optional: For timer-based entries</div>
+          </div>
+          <div class="col-12">
+            <%= form.label :notes, 'Description', class: 'form-label' %>
+            <%= form.text_area :notes, rows: 2, class: 'form-control', placeholder: 'What did you work on?' %>
+          </div>
+          <div class="col-12 text-end">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <%= form.submit 'Log Time', class: 'btn btn-new-agenda' %>
+          </div>
         <% end %>
       </div>
     </div>

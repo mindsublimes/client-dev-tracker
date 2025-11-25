@@ -26,8 +26,81 @@
           </button>
         <% end %>
         <a class="navbar-brand fw-semibold" href="<%= user_signed_in? ? dashboard_path : root_path %>">DevTracker</a>
+        <% if user_signed_in? %>
+          <div class="flex-grow-1 search-form-container">
+            <div class="position-relative" style="isolation: isolate;">
+              <%= form_with url: searches_path, method: :get, local: true, class: 'search-form', data: { behavior: 'global-search' } do |form| %>
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+                  <%= form.text_field :q, value: params[:q], class: 'form-control border-start-0', placeholder: 'Search projects, sprints, agenda items...', autocomplete: 'off', data: { behavior: 'search-input' } %>
+                </div>
+              <% end %>
+              <div class="bg-white border rounded shadow-lg" id="searchResults" style="display: none; z-index: 10001; max-height: 400px; overflow-y: scroll; overflow-x: hidden; position: fixed; background: #fff !important; background-color: #fff !important;">
+                <div class="p-2" style="background: #fff !important; background-color: #fff !important; position: relative;">
+                  <div class="text-center py-3">
+                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% end %>
         <div class="d-flex align-items-center gap-3 ms-auto">
           <% if user_signed_in? %>
+            <div class="dropdown position-relative">
+              <button class="btn btn-link text-decoration-none notification-btn d-flex align-items-center shadow-none position-relative" type="button" id="notificationDropdown" aria-expanded="false">
+                <i class="bi bi-bell"></i>
+                <% unread_count = current_user.notifications.unread.count %>
+                <% if unread_count > 0 %>
+                  <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-badge" style="font-size: 0.7rem; padding: 0.25rem 0.5rem; font-weight: 700; min-width: 20px; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.4);">
+                    <%= unread_count > 9 ? '9+' : unread_count %>
+                  </span>
+                <% end %>
+              </button>
+              <div class="dropdown-menu dropdown-menu-end notification-dropdown" aria-labelledby="notificationDropdown" id="notificationMenu" style="min-width: 320px; max-width: 400px; max-height: 500px; overflow-y: auto;">
+                <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                  <h6 class="mb-0">Notifications</h6>
+                  <% if unread_count > 0 %>
+                    <%= button_to mark_all_read_notifications_path, method: :patch, class: 'btn btn-sm btn-link text-decoration-none p-0', form: { class: 'd-inline' } do %>
+                      <small>Mark all read</small>
+                    <% end %>
+                  <% end %>
+                </div>
+                <div id="notificationList">
+                  <% notifications = current_user.notifications.includes(:agenda_item).recent.limit(10) %>
+                  <% if notifications.any? %>
+                    <% notifications.each do |notification| %>
+                      <%= form_with url: notification_path(notification), method: :patch, local: true, class: 'd-inline w-100', data: { behavior: 'notification-link' } do |f| %>
+                        <%= hidden_field_tag :redirect_to, agenda_item_path(notification.agenda_item) %>
+                        <button type="submit" class="dropdown-item notification-item <%= 'unread' unless notification.read? %>">
+                          <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                              <div class="small text-muted mb-1"><%= notification.notification_type.titleize %></div>
+                              <div class="fw-semibold"><%= notification.message %></div>
+                              <div class="small text-muted mt-1"><%= time_ago_in_words(notification.created_at) %> ago</div>
+                            </div>
+                            <% unless notification.read? %>
+                              <span class="badge bg-danger rounded-pill ms-2" style="font-size: 0.5rem; padding: 0.15rem 0.3rem; min-width: 8px; height: 8px;"></span>
+                            <% end %>
+                          </div>
+                        </button>
+                      <% end %>
+                    <% end %>
+                  <% else %>
+                    <div class="dropdown-item-text text-center text-muted py-4">
+                      No notifications
+                    </div>
+                  <% end %>
+                </div>
+                <% if notifications.count > 10 %>
+                  <div class="text-center p-2 border-top">
+                    <%= link_to 'View all notifications', notifications_path, class: 'btn btn-sm btn-link text-decoration-none' %>
+                  </div>
+                <% end %>
+              </div>
+            </div>
             <div class="dropdown">
               <button class="btn btn-link text-decoration-none user-icon-btn d-flex align-items-center gap-2 shadow-none" type="button" id="userDropdown" aria-expanded="false">
                 <i class="bi bi-person-circle"></i>

@@ -16,6 +16,16 @@ class AgendaItem < ApplicationRecord
 
   has_many :agenda_messages, dependent: :destroy
   has_many :activity_logs, dependent: :destroy
+  has_many :time_entries, dependent: :destroy
+  has_many :notifications, dependent: :destroy
+
+  def active_timer_for(user)
+    time_entries.where(user: user).active_timers.first
+  end
+
+  def has_active_timer_for?(user)
+    active_timer_for(user).present?
+  end
 
   enum work_stream: { sprint: 0, correction: 1, enhancement: 2, training: 3, support: 4 }
   enum status: {
@@ -40,6 +50,8 @@ class AgendaItem < ApplicationRecord
   before_validation :sync_hierarchy
   validate :hierarchy_consistency
   before_save :apply_rank_score
+  after_save :notify_status_change, if: :saved_change_to_status?
+  after_save :notify_assignment, if: :saved_change_to_assignee_id?
 
   scope :ranked, -> { order(rank_score: :desc, due_on: :asc) }
   scope :pending, -> { where.not(status: %i[completed archived cancelled]) }
@@ -119,5 +131,17 @@ class AgendaItem < ApplicationRecord
 
   def apply_rank_score
     AgendaItems::Ranker.new(self).apply
+  end
+
+  def notify_status_change
+    old_status = saved_change_to_status? ? saved_change_to_status[0] : status_was
+    new_status = status
+    NotificationCreator.notify_status_change(self, old_status, new_status)
+  end
+
+  def notify_assignment
+    return unless assignee.present?
+
+    NotificationCreator.notify_assignment(self, assignee)
   end
 end

@@ -25,6 +25,7 @@ class AgendaItemsController < ApplicationController
     @message = @agenda_item.agenda_messages.build(user: current_user)
     @messages = @agenda_item.agenda_messages.includes(:user).order(created_at: :asc)
     @activity_logs = @agenda_item.activity_logs.includes(:user).recent
+    @active_timer = @agenda_item.active_timer_for(current_user) if current_user
   end
 
   def new
