@@ -1,0 +1,70 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="h3 mb-0">Add Bulk Agenda Items</h1>
+    <p class="text-muted mb-0">Create multiple agenda items at once. Each row represents one agenda item.</p>
+  </div>
+  <%= link_to 'Cancel', agenda_items_path, class: 'btn btn-outline-dark' %>
+</div>
+
+<%= form_with url: create_bulk_agenda_items_path, method: :post, class: 'card shadow-sm border-0', id: 'bulk-agenda-form' do |form| %>
+  <div class="card-body">
+    <% if @errors&.any? %>
+      <div class="alert alert-danger mb-4">
+        <p class="fw-semibold mb-1">Please correct the following errors:</p>
+        <ul class="mb-0">
+          <% @errors.each do |error| %>
+            <li>Row <%= error[:index] %>: <%= error[:errors].join(', ') %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <!-- Header Row: Client, Assignee, Sprint -->
+    <div class="row g-3 mb-4 pb-3 border-bottom">
+      <% unless current_user&.client? %>
+        <div class="col-md-4">
+          <%= form.label :client_id, 'Client', class: 'form-label' %>
+          <% client_options = [['Select client', nil]] + @clients.map { |client| [client.name, client.id] } %>
+          <%= form.select :client_id, options_for_select(client_options, params[:client_id]), {},
+                         class: 'form-select', required: true,
+                         data: { behavior: 'client-select' } %>
+        </div>
+        <div class="col-md-4">
+          <%= form.label :assignee_id, 'Assignee', class: 'form-label' %>
+          <%= form.collection_select :assignee_id, @assignees, :id, :full_name,
+                                     { include_blank: 'Unassigned', selected: @default_assignee_id },
+                                     class: 'form-select' %>
+        </div>
+      <% else %>
+        <%= form.hidden_field :client_id, value: current_user.client_id %>
+        <%= form.hidden_field :assignee_id %>
+      <% end %>
+      <div class="col-md-4">
+        <%= form.label :sprint_id, 'Sprint', class: 'form-label' %>
+        <%= form.select :sprint_id,
+                        sprint_options_for_select(@sprints, params[:sprint_id]),
+                        { include_blank: 'Select sprint' },
+                        class: 'form-select',
+                        data: { behavior: 'sprint-select', client_id: @sprint_client_id } %>
+      </div>
+    </div>
+
+    <!-- Bulk Items Container -->
+    <div id="bulk-items-container">
+      <!-- Items will be added here dynamically -->
+    </div>
+
+    <div class="mt-3">
+      <button type="button" class="btn btn-outline-primary" id="add-item-row">
+        <i class="bi bi-plus-circle"></i> Add Row
+      </button>
+    </div>
+  </div>
+  
+  <div class="card-footer bg-white border-0 d-flex justify-content-end gap-2 mb-3">
+    <%= link_to 'Cancel', agenda_items_path, class: 'btn btn-outline-dark' %>
+    <%= form.submit 'Create All Items', class: 'btn btn-new-agenda' %>
+  </div>
+<% end %>
+
+

@@ -8,6 +8,15 @@ class ProjectsController < ApplicationController
     scope = policy_scope(Project).includes(:client)
     @filters = project_filter_params
 
+    # For developers, only show projects associated with agenda items they're assigned to
+    if current_user&.developer?
+      assigned_project_ids = AgendaItem.where(assignee_id: current_user.id)
+                                       .where.not(project_id: nil)
+                                       .distinct
+                                       .pluck(:project_id)
+      scope = scope.where(id: assigned_project_ids)
+    end
+
     scope = scope.where(client_id: @filters[:client_id]) if @filters[:client_id].present?
     if @filters[:search].present?
       term = "%#{@filters[:search]}%"

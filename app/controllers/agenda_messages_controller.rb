@@ -11,7 +11,8 @@ class AgendaMessagesController < ApplicationController
     else
       @message = @agenda_message
       @messages = @agenda_item.agenda_messages.includes(:user).order(created_at: :asc)
-      flash.now[:alert] = 'Unable to post your update.'
+      @activity_logs = @agenda_item.activity_logs.includes(:user).recent
+      @active_timer = @agenda_item.active_timer_for(current_user) if current_user
       render 'agenda_items/show', status: :unprocessable_entity
     end
   end

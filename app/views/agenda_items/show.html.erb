@@ -75,10 +75,12 @@
               <div class="fw-semibold">Not estimated</div>
             <% end %>
           </div>
-          <div class="col-md-6">
-            <div class="text-muted small">Notes</div>
-            <div><%= simple_format(@agenda_item.notes.presence || 'No internal notes yet.') %></div>
-          </div>
+          <% unless current_user&.client? %>
+            <div class="col-md-6">
+              <div class="text-muted small">Notes</div>
+              <div><%= simple_format(@agenda_item.notes.presence || 'No internal notes yet.') %></div>
+            </div>
+          <% end %>
         </div>
       </div>
     </div>
@@ -162,30 +164,31 @@
       </div>
     </div>
 
-    <div class="card shadow-sm border-0 mt-3">
-      <div class="card-header bg-white section-header d-flex justify-content-between align-items-center">
-        <h6 class="mb-0">Time Entries</h6>
-        <div class="d-flex gap-2">
-          <% if policy(TimeEntry.new(agenda_item: @agenda_item)).create? %>
-            <% if @active_timer.present? %>
-              <%= button_to stop_agenda_item_time_entries_path(@agenda_item), method: :post, 
-                  class: 'btn btn-sm btn-timer-stop', 
-                  form: { class: 'd-inline' } do %>
-                <i class="bi bi-stop-circle"></i> Stop Timer
+    <% unless current_user&.client? %>
+      <div class="card shadow-sm border-0 mt-3">
+        <div class="card-header bg-white section-header d-flex justify-content-between align-items-center">
+          <h6 class="mb-0">Time Entries</h6>
+          <div class="d-flex gap-2">
+            <% if policy(TimeEntry.new(agenda_item: @agenda_item)).create? %>
+              <% if @active_timer.present? %>
+                <%= button_to stop_agenda_item_time_entries_path(@agenda_item), method: :post, 
+                    class: 'btn btn-sm btn-timer-stop', 
+                    form: { class: 'd-inline' } do %>
+                  <i class="bi bi-stop-circle"></i> Stop Timer
+                <% end %>
+              <% else %>
+                <%= button_to start_agenda_item_time_entries_path(@agenda_item), method: :post, 
+                    class: 'btn btn-sm btn-timer-start',
+                    form: { class: 'd-inline' } do %>
+                  <i class="bi bi-play-circle"></i> Start Timer
+                <% end %>
               <% end %>
-            <% else %>
-              <%= button_to start_agenda_item_time_entries_path(@agenda_item), method: :post, 
-                  class: 'btn btn-sm btn-timer-start',
-                  form: { class: 'd-inline' } do %>
-                <i class="bi bi-play-circle"></i> Start Timer
-              <% end %>
+              <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#timeEntryModal">
+                <i class="bi bi-plus-circle"></i> Log Time
+              </button>
             <% end %>
-            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#timeEntryModal">
-              <i class="bi bi-plus-circle"></i> Log Time
-            </button>
-          <% end %>
+          </div>
         </div>
-      </div>
       <div class="card-body">
         <% time_entries = @agenda_item.time_entries.recent %>
         <% if time_entries.any? %>
@@ -247,6 +250,7 @@
         <% end %>
       </div>
     </div>
+    <% end %>
 
     <div class="card shadow-sm border-0 mt-3">
       <div class="card-header bg-white section-header">

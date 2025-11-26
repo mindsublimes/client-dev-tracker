@@ -1,5 +1,6 @@
 // Basic interactions without Stimulus/Hotwire
 import "bootstrap"
+import flatpickr from "flatpickr"
 
 document.addEventListener('DOMContentLoaded', () => {
   setupAlertDismissals()
@@ -13,6 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
   setupSelect2()
   setupGlobalSearch()
   setupNotificationDropdown()
+  setupDateRangePicker()
+  setupBulkAgendaForm()
 })
 
 function setupAlertDismissals() {
@@ -224,7 +227,19 @@ function filterSprintOptions(sprintSelect, clientId) {
   const previousValue = sprintSelect.value
   const hasVisible = filteredOptions.some(option => option.value)
   const shouldDisable = !clientId || !hasVisible
-  const nextValue = filteredOptions.some(option => option.value === previousValue) ? previousValue : ''
+  
+  // If no sprint is currently selected and we have options, select the first (latest) one
+  let nextValue = ''
+  if (hasVisible) {
+    if (previousValue && filteredOptions.some(option => option.value === previousValue)) {
+      // Keep the previously selected value if it's still available
+      nextValue = previousValue
+    } else {
+      // Select the first available sprint (which should be the latest due to ordering)
+      const firstAvailable = filteredOptions.find(option => option.value && !option.disabled)
+      nextValue = firstAvailable ? firstAvailable.value : ''
+    }
+  }
 
   rebuildSprintOptions(sprintSelect, filteredOptions, nextValue)
 
@@ -571,12 +586,22 @@ function setupGlobalSearch() {
     }
   })
 
-  // Handle escape key
+  // Handle escape key and prevent Enter from submitting form
   searchInput.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       searchResults.style.display = 'none'
       searchInput.blur()
+    } else if (e.key === 'Enter') {
+      e.preventDefault()
+      e.stopPropagation()
+      // Don't submit the form, just show dropdown results
     }
+  })
+  
+  // Prevent form submission on Enter
+  searchForm.addEventListener('submit', (e) => {
+    e.preventDefault()
+    return false
   })
 }
 
@@ -638,3 +663,200 @@ document.addEventListener('turbo:load', setupGlobalSearch)
 document.addEventListener('turbo:render', setupGlobalSearch)
 document.addEventListener('turbo:load', setupNotificationDropdown)
 document.addEventListener('turbo:render', setupNotificationDropdown)
+document.addEventListener('turbo:load', setupDateRangePicker)
+document.addEventListener('turbo:render', setupDateRangePicker)
+document.addEventListener('turbo:load', setupBulkAgendaForm)
+document.addEventListener('turbo:render', setupBulkAgendaForm)
+
+function setupBulkAgendaForm() {
+  const container = document.getElementById('bulk-items-container');
+  const addButton = document.getElementById('add-item-row');
+  
+  if (!container || !addButton) return;
+  
+  // Prevent multiple initializations
+  if (addButton.dataset.initialized === 'true') return;
+  addButton.dataset.initialized = 'true';
+  
+  let rowIndex = 0;
+
+  function createItemRow() {
+    const rowId = `item_${rowIndex++}`;
+    const row = document.createElement('div');
+    row.className = 'bulk-item-row mb-4 pb-4 border-bottom';
+    row.dataset.rowId = rowId;
+    
+    const today = new Date().toISOString().split('T')[0];
+    
+    row.innerHTML = `
+      <div class="row g-2 mb-2">
+        <div class="col-md-2">
+          <label class="form-label small">Title</label>
+          <input type="text" name="items[][title]" class="form-control form-control-sm" placeholder="Item title" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small">Type</label>
+          <select name="items[][work_stream]" class="form-select form-select-sm">
+            <option value="sprint">Sprint</option>
+            <option value="correction">Correction</option>
+            <option value="enhancement">Enhancement</option>
+            <option value="training">Training</option>
+            <option value="support">Support</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small">Status</label>
+          <select name="items[][status]" class="form-select form-select-sm">
+            <option value="backlog">Backlog</option>
+            <option value="scoped">Scoped</option>
+            <option value="in_progress">In Progress</option>
+            <option value="blocked">Blocked</option>
+            <option value="in_review">In Review</option>
+            <option value="completed">Completed</option>
+            <option value="archived">Archived</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small">Priority</label>
+          <select name="items[][priority_level]" class="form-select form-select-sm">
+            <option value="low">Low</option>
+            <option value="normal" selected>Normal</option>
+            <option value="high">High</option>
+            <option value="urgent">Urgent</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small">Complexity</label>
+          <select name="items[][complexity]" class="form-select form-select-sm">
+            <option value="1">Minimal</option>
+            <option value="2">Low</option>
+            <option value="3" selected>Medium</option>
+            <option value="4">High</option>
+            <option value="5">Severe</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small">Due Date</label>
+          <input type="date" name="items[][due_on]" class="form-control form-control-sm date-input" value="${today}" />
+          <button type="button" class="btn btn-sm btn-outline-danger mt-2 w-100 remove-row" style="display: none;">
+            <i class="bi bi-trash"></i> Remove
+          </button>
+        </div>
+      </div>
+      <div class="row g-2">
+        <div class="col-12">
+          <label class="form-label small">Description</label>
+          <textarea name="items[][description]" class="form-control form-control-sm" rows="2" placeholder="Item description (optional)"></textarea>
+        </div>
+      </div>
+    `;
+    
+    container.appendChild(row);
+    updateRemoveButtons();
+    
+    // Initialize flatpickr for date fields if available
+    if (typeof flatpickr !== 'undefined') {
+      const dateInput = row.querySelector('.date-input');
+      if (dateInput && !dateInput._flatpickr) {
+        flatpickr(dateInput, {
+          dateFormat: 'Y-m-d',
+          allowInput: true
+        });
+      }
+    }
+  }
+
+  function updateRemoveButtons() {
+    const rows = container.querySelectorAll('.bulk-item-row');
+    rows.forEach((row) => {
+      const removeBtn = row.querySelector('.remove-row');
+      if (removeBtn) {
+        removeBtn.style.display = rows.length > 1 ? 'block' : 'none';
+      }
+    });
+  }
+
+  function removeItemRow(event) {
+    const row = event.target.closest('.bulk-item-row');
+    if (row) {
+      row.remove();
+      updateRemoveButtons();
+    }
+  }
+
+  // Add event listener to the button
+  addButton.addEventListener('click', function(e) {
+    e.preventDefault();
+    createItemRow();
+  });
+  
+  // Add event listener for remove buttons (delegation)
+  container.addEventListener('click', function(e) {
+    if (e.target.closest('.remove-row')) {
+      e.preventDefault();
+      removeItemRow(e);
+    }
+  });
+
+  // Add initial row if container is empty
+  if (container.children.length === 0) {
+    createItemRow();
+  }
+  
+  // Reinitialize sprint filtering if needed
+  if (typeof setupSprintSelectFiltering === 'function') {
+    setupSprintSelectFiltering();
+  }
+}
+
+function setupDateRangePicker() {
+  const dateFromInput = document.querySelector('[data-behavior="date-range-from"]')
+  const dateToInput = document.querySelector('[data-behavior="date-range-to"]')
+  
+  if (!dateFromInput || !dateToInput) return
+  
+  // Skip if already initialized
+  if (dateFromInput._flatpickr || dateToInput._flatpickr) return
+  
+  // Get min/max dates from form text hint or use defaults
+  const formText = dateFromInput.closest('.input-group')?.nextElementSibling?.textContent
+  let minDate = null
+  let maxDate = null
+  
+  if (formText) {
+    const match = formText.match(/Range: (.+?) - (.+)/)
+    if (match) {
+      try {
+        minDate = new Date(match[1].trim())
+        maxDate = new Date(match[2].trim())
+      } catch (e) {
+        // Use defaults if parsing fails
+      }
+    }
+  }
+  
+  const dateFromPicker = flatpickr(dateFromInput, {
+    dateFormat: 'Y-m-d',
+    allowInput: true,
+    minDate: minDate || undefined,
+    maxDate: maxDate || undefined,
+    onChange: function(selectedDates) {
+      if (selectedDates.length > 0 && dateToPicker) {
+        dateToPicker.set('minDate', selectedDates[0])
+      }
+    }
+  })
+  
+  const dateToPicker = flatpickr(dateToInput, {
+    dateFormat: 'Y-m-d',
+    allowInput: true,
+    minDate: minDate || undefined,
+    maxDate: maxDate || undefined,
+    onChange: function(selectedDates) {
+      if (selectedDates.length > 0 && dateFromPicker) {
+        dateFromPicker.set('maxDate', selectedDates[0])
+      }
+    }
+  })
+}

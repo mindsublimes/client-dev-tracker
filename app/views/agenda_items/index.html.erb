@@ -4,7 +4,10 @@
     <p class="text-muted mb-0">Ranked internal tracker across clients.</p>
   </div>
   <% if policy(AgendaItem).new? %>
-    <%= link_to 'New agenda item', new_agenda_item_path, class: 'btn btn-new-agenda' %>
+    <div class="d-flex gap-2">
+      <%= link_to 'New agenda item', new_agenda_item_path, class: 'btn btn-new-agenda' %>
+      <%= link_to 'Add Bulk Agenda Items', new_bulk_agenda_items_path, class: 'btn btn-outline-primary' %>
+    </div>
   <% end %>
 </div>
 
@@ -13,33 +16,67 @@
     <%= form_with url: agenda_items_path,
               method: :get,
               scope: :filters,
-              html: { class: 'row g-3 align-items-end auto-submit-form', data: { auto_submit: true } } do |form| %>
-      <div class="col-md-3">
-        <%= form.label :search, 'Keyword', class: 'form-label' %>
-        <%= form.text_field :search, value: @filters[:search], class: 'form-control', placeholder: 'Search title or requester' %>
-      </div>
-      <% unless current_user&.client? %>
-        <div class="col-md-3">
-          <%= form.label :client_id, 'Client', class: 'form-label' %>
-          <% client_options = [['All clients', nil]] + @clients.map { |client| [client.name, client.id] } %>
-          <%= form.select :client_id, options_for_select(client_options, @filters[:client_id]), {}, class: 'form-select' %>
+              html: { class: 'auto-submit-form', data: { auto_submit: true } } do |form| %>
+      <div class="row g-3 align-items-end mb-3">
+        <div class="col-md-2 mb-4">
+          <%= form.label :date_type, 'Date Type', class: 'form-label' %>
+          <%= form.select :date_type,
+                          options_for_select([
+                            ['Due', 'due'],
+                            ['Created', 'created'],
+                            ['Completed', 'completed']
+                          ], @filters[:date_type] || 'due'),
+                          {},
+                          class: 'form-select' %>
         </div>
-      <% end %>
-      <div class="col-md-3">
-        <%= form.label :status, class: 'form-label' %>
-        <%= form.select :status,
-                        options_for_select(
-                          [['All statuses', nil]] + AgendaItem.statuses.keys.map { |status| [status.titleize, status] },
-                          @filters[:status]
-                        ), {}, class: 'form-select' %>
+        <div class="col-md-4">
+          <%= form.label :date_range, 'Date Range', class: 'form-label' %>
+          <div class="input-group">
+            <%= form.text_field :date_from,
+                                value: @filters[:date_from],
+                                class: 'form-control date-range-input',
+                                placeholder: 'From',
+                                data: { behavior: 'date-range-from' } %>
+            <span class="input-group-text">to</span>
+            <%= form.text_field :date_to,
+                                value: @filters[:date_to],
+                                class: 'form-control date-range-input',
+                                placeholder: 'To',
+                                data: { behavior: 'date-range-to' } %>
+          </div>
+          <div class="form-text">
+            Range: <%= @min_date.strftime('%B %d, %Y') %> - <%= @max_date.strftime('%B %d, %Y') %>
+          </div>
+        </div>
       </div>
-      <div class="col-md-3">
-        <%= form.label :work_stream, 'Work Type', class: 'form-label' %>
-        <%= form.select :work_stream,
-                        options_for_select(
-                          [['All work types', nil]] + AgendaItem.work_streams.keys.map { |stream| [stream.titleize, stream] },
-                          @filters[:work_stream]
-                        ), {}, class: 'form-select' %>
+      <div class="row g-3 align-items-end">
+        <div class="col-md-2">
+          <%= form.label :search, 'Keyword', class: 'form-label' %>
+          <%= form.text_field :search, value: @filters[:search], class: 'form-control', placeholder: 'Search title or requester' %>
+        </div>
+        <% unless current_user&.client? %>
+          <div class="col-md-2">
+            <%= form.label :client_id, 'Client', class: 'form-label' %>
+            <% client_options = [['All clients', nil]] + @clients.map { |client| [client.name, client.id] } %>
+            <%= form.select :client_id, options_for_select(client_options, @filters[:client_id]), {}, class: 'form-select' %>
+          </div>
+        <% end %>
+        <div class="col-md-2">
+          <%= form.label :status, class: 'form-label' %>
+          <%= form.select :status,
+                          options_for_select(
+                            [['All statuses', nil]] + AgendaItem.statuses.keys.map { |status| [status.titleize, status] },
+                            @filters[:status]
+                          ), {}, class: 'form-select' %>
+        </div>
+        <div class="col-md-2">
+          <%= form.label :work_stream, 'Work Type', class: 'form-label' %>
+          <%= form.select :work_stream,
+                          options_for_select(
+                            [['All work types', nil]] + AgendaItem.work_streams.keys.map { |stream| [stream.titleize, stream] },
+                            @filters[:work_stream]
+                          ), {}, class: 'form-select' %>
+        </div>
       </div>
     <% end %>
   </div>

@@ -5,7 +5,8 @@ class AgendaMessage < ApplicationRecord
   has_many_attached :files
 
   enum kind: { status_update: 0, comment: 1, issue: 2, decision: 3, question: 4, request: 5 }
-  validates :body, presence: true
+  
+  validate :body_or_files_present
 
   scope :recent, -> { order(created_at: :desc) }
 
@@ -17,6 +18,12 @@ class AgendaMessage < ApplicationRecord
   end
 
   private
+
+  def body_or_files_present
+    if body.blank? && !files.attached?
+      errors.add(:base, 'Please either write a note or attach a file.')
+    end
+  end
 
   def refresh_agenda_rank
     agenda_item.refresh_rank!

@@ -1,4 +1,14 @@
 <%= form_with(model: [agenda_item, message], html: { multipart: true }) do |form| %>
+  <% if message.errors.any? %>
+    <div class="alert alert-danger mb-3">
+      <p class="fw-semibold mb-1">Please correct the following:</p>
+      <ul class="mb-0">
+        <% message.errors.full_messages.each do |error| %>
+          <li><%= error %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
   <div class="row g-3">
     <div class="col-md-3">
       <%= form.label :kind, 'Update type', class: 'form-label' %>
@@ -6,11 +16,23 @@
     </div>
     <div class="col-12">
       <%= form.label :body, 'Notes', class: 'form-label' %>
-      <%= form.text_area :body, rows: 3, class: 'form-control', required: true %>
+      <%= form.text_area :body, rows: 3, class: "form-control #{'is-invalid' if message.errors[:base].any? || message.errors[:body].any?}" %>
+      <div class="form-text">Optional if files are attached</div>
+      <% if message.errors[:body].any? %>
+        <div class="invalid-feedback d-block">
+          <%= message.errors[:body].first %>
+        </div>
+      <% end %>
     </div>
     <div class="col-12">
       <%= form.label :files, 'Attach files/screenshots', class: 'form-label' %>
-      <%= form.file_field :files, multiple: true, class: 'form-control' %>
+      <%= form.file_field :files, multiple: true, class: "form-control #{'is-invalid' if message.errors[:base].any?}" %>
+      <div class="form-text">Either notes or files are required</div>
+      <% if message.errors[:base].any? %>
+        <div class="invalid-feedback d-block">
+          <%= message.errors[:base].first %>
+        </div>
+      <% end %>
     </div>
     <div class="col-12 text-end mb-3">
       <%= form.submit 'Post update', class: 'btn btn-new-agenda' %>

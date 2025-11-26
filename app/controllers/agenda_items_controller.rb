@@ -1,5 +1,5 @@
 class AgendaItemsController < ApplicationController
-  before_action :set_clients, only: %i[index new create edit update]
+  before_action :set_clients, only: %i[index new create edit update new_bulk create_bulk]
   before_action :set_agenda_item, only: %i[show edit update destroy complete reopen rank]
 
   def index
@@ -16,8 +16,36 @@ class AgendaItemsController < ApplicationController
       scope = scope.where('title ILIKE :query OR requested_by ILIKE :query', query:)
     end
 
+    # Date range filtering
+    if @filters[:date_from].present? && @filters[:date_to].present?
+      date_from = Date.parse(@filters[:date_from])
+      date_to = Date.parse(@filters[:date_to])
+      
+      case @filters[:date_type]
+      when 'created'
+        scope = scope.where(created_at: date_from.beginning_of_day..date_to.end_of_day)
+      when 'completed'
+        scope = scope.where(completed_at: date_from.beginning_of_day..date_to.end_of_day)
+      when 'due', nil
+        scope = scope.where(due_on: date_from..date_to)
+      end
+    end
+
     @agenda_items = scope.order(rank_score: :desc, due_on: :asc)
     @status_counts = AgendaItem.statuses.keys.index_with { |status| scope.where(status:).count }
+    
+    # Calculate min/max dates for date range picker (use created_at, due_on, and completed_at)
+    all_items = policy_scope(AgendaItem)
+    dates = []
+    dates << all_items.minimum(:created_at)&.to_date
+    dates << all_items.minimum(:due_on)
+    dates << all_items.minimum(:completed_at)&.to_date
+    dates << all_items.maximum(:created_at)&.to_date
+    dates << all_items.maximum(:due_on)
+    dates << all_items.maximum(:completed_at)&.to_date
+    dates = dates.compact
+    @min_date = dates.min || Date.current
+    @max_date = dates.max || Date.current
   end
 
   def show
@@ -29,9 +57,25 @@ class AgendaItemsController < ApplicationController
   end
 
   def new
-    defaults = { priority_level: :normal, work_stream: :sprint, status: :backlog, complexity: 3, due_on: Date.current + 7.days }
+    defaults = { priority_level: :normal, work_stream: :sprint, status: :backlog, complexity: 3, due_on: Date.current }
     @agenda_item = AgendaItem.new(defaults)
     @agenda_item.assign_attributes(prefill_params)
+    
+    # Default assignee to current user if internal role
+    if current_user&.internal_role? && @agenda_item.assignee_id.blank?
+      @agenda_item.assignee_id = current_user.id
+    end
+    
+    # Default sprint to latest sprint for the client
+    if @agenda_item.client_id.present? && @agenda_item.sprint_id.blank?
+      # Find latest sprint for this client (through projects)
+      latest_sprint = @sprints.joins(:project)
+                               .where(projects: { client_id: @agenda_item.client_id })
+                               .order(start_date: :desc, created_at: :desc)
+                               .first
+      @agenda_item.sprint_id = latest_sprint&.id
+    end
+    
     apply_client_defaults(@agenda_item)
     authorize @agenda_item
   end
@@ -99,6 +143,55 @@ class AgendaItemsController < ApplicationController
     redirect_to @agenda_item, notice: 'Ranking recalculated.'
   end
 
+  def new_bulk
+    authorize AgendaItem, :new?
+    @default_assignee_id = current_user&.internal_role? ? current_user.id : nil
+  end
+
+  def create_bulk
+    authorize AgendaItem, :create?
+    
+    @created_items = []
+    @errors = []
+    
+    items = bulk_params[:items] || []
+    items.each_with_index do |item_params, index|
+      next if item_params.blank? || item_params[:title].blank? # Skip empty rows
+      
+      agenda_item = AgendaItem.new(bulk_item_params(item_params))
+      agenda_item.client_id = bulk_params[:client_id] if bulk_params[:client_id].present?
+      agenda_item.assignee_id = bulk_params[:assignee_id] if bulk_params[:assignee_id].present?
+      agenda_item.sprint_id = bulk_params[:sprint_id] if bulk_params[:sprint_id].present?
+      
+      # Apply defaults
+      agenda_item.priority_level ||= :normal
+      agenda_item.work_stream ||= :sprint
+      agenda_item.status ||= :backlog
+      agenda_item.complexity ||= 3
+      agenda_item.due_on ||= Date.current
+      
+      apply_client_defaults(agenda_item)
+      authorize agenda_item, :create?
+      
+      if agenda_item.save
+        ActivityLogger.log_creation(agenda_item, current_user)
+        @created_items << agenda_item
+      else
+        @errors << { index: index + 1, errors: agenda_item.errors.full_messages }
+      end
+    end
+    
+    if @errors.empty? && @created_items.any?
+      redirect_to agenda_items_path, success: "Successfully created #{@created_items.count} agenda item(s)."
+    elsif @errors.any?
+      @default_assignee_id = bulk_params[:assignee_id]
+      flash.now[:alert] = "Some items could not be created. Please review the errors below."
+      render :new_bulk, status: :unprocessable_entity
+    else
+      redirect_to new_bulk_agenda_items_path, alert: 'No agenda items were created. Please add at least one item with a title.'
+    end
+  end
+
   private
 
   def set_clients
@@ -132,13 +225,16 @@ class AgendaItemsController < ApplicationController
   end
 
   def filter_params
-    permitted = params.fetch(:filters, {}).permit(:client_id, :status, :work_stream, :search).to_h
+    permitted = params.fetch(:filters, {}).permit(:client_id, :status, :work_stream, :search, :date_from, :date_to, :date_type).to_h
 
     filters = {
       client_id: permitted['client_id'].presence&.to_i,
       status: permitted['status'].presence,
       work_stream: permitted['work_stream'].presence,
-      search: permitted['search'].presence
+      search: permitted['search'].presence,
+      date_from: permitted['date_from'].presence,
+      date_to: permitted['date_to'].presence,
+      date_type: permitted['date_type'].presence || 'due'
     }
 
     if current_user&.client? && current_user.client_id.present?
@@ -180,12 +276,21 @@ class AgendaItemsController < ApplicationController
   end
 
   def load_sprints
-    scope = Sprint.includes(project: :client).order(:name)
+    scope = Sprint.includes(project: :client).order(start_date: :desc, created_at: :desc)
 
     if current_user&.client? && current_user.client_id.present?
       scope = scope.joins(:project).where(projects: { client_id: current_user.client_id })
     end
 
     scope
+  end
+
+  def bulk_params
+    params.permit(:client_id, :assignee_id, :sprint_id, items: [:title, :description, :work_stream, :status, :priority_level, :complexity, :due_on])
+  end
+
+  def bulk_item_params(item_params)
+    return {} unless item_params.is_a?(ActionController::Parameters) || item_params.is_a?(Hash)
+    item_params.permit(:title, :description, :work_stream, :status, :priority_level, :complexity, :due_on)
   end
 end

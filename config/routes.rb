@@ -19,6 +19,11 @@ Rails.application.routes.draw do
   end
 
   resources :agenda_items do
+    collection do
+      get :new_bulk
+      post :create_bulk
+    end
+    
     member do
       patch :complete
       patch :reopen

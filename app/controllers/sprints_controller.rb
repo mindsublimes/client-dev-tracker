@@ -8,6 +8,15 @@ class SprintsController < ApplicationController
     scope = policy_scope(Sprint).includes(project: :client)
     @filters = sprint_filter_params
 
+    # For developers, only show sprints associated with agenda items they're assigned to
+    if current_user&.developer?
+      assigned_sprint_ids = AgendaItem.where(assignee_id: current_user.id)
+                                     .where.not(sprint_id: nil)
+                                     .distinct
+                                     .pluck(:sprint_id)
+      scope = scope.where(id: assigned_sprint_ids)
+    end
+
     scope = scope.joins(:project).where(projects: { client_id: @filters[:client_id] }) if @filters[:client_id].present?
     scope = scope.where(project_id: @filters[:project_id]) if @filters[:project_id].present?
     if @filters[:search].present?
