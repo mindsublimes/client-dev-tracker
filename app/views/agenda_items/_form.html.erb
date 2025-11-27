@@ -15,6 +15,16 @@
       <% if current_user&.client? %>
         <%= form.hidden_field :client_id, value: current_user.client_id, data: { behavior: 'client-select' } %>
         <%= form.hidden_field :assignee_id %>
+        <% if @client_sprints_count && @client_sprints_count > 1 %>
+          <div class="col-md-6">
+            <%= form.label :sprint_id, 'Sprint', class: 'form-label' %>
+            <%= form.select :sprint_id,
+                            sprint_options_for_select(@sprints, @agenda_item.sprint_id),
+                            { include_blank: 'Select sprint' },
+                            class: 'form-select',
+                            data: { behavior: 'sprint-select', client_id: @sprint_client_id } %>
+          </div>
+        <% end %>
       <% else %>
         <div class="col-md-6">
           <%= form.label :client_id, 'Client', class: 'form-label' %>
@@ -27,16 +37,16 @@
           <%= form.collection_select :assignee_id, @assignees, :id, :full_name,
                                      { include_blank: 'Unassigned' }, class: 'form-select' %>
         </div>
+        <div class="col-md-6">
+          <%= form.label :sprint_id, 'Sprint (Project - Sprint)', class: 'form-label' %>
+          <%= form.select :sprint_id,
+                          sprint_options_for_select(@sprints, @agenda_item.sprint_id),
+                          { include_blank: 'Select sprint' },
+                          class: 'form-select',
+                          data: { behavior: 'sprint-select', client_id: @sprint_client_id } %>
+          <div class="form-text">Sprints are scoped to the selected client.</div>
+        </div>
       <% end %>
-      <div class="col-md-6">
-        <%= form.label :sprint_id, 'Sprint (Project - Sprint)', class: 'form-label' %>
-        <%= form.select :sprint_id,
-                        sprint_options_for_select(@sprints, @agenda_item.sprint_id),
-                        { include_blank: 'Select sprint' },
-                        class: 'form-select',
-                        data: { behavior: 'sprint-select', client_id: @sprint_client_id } %>
-        <div class="form-text">Sprints are scoped to the selected client.</div>
-      </div>
       <div class="col-12">
         <%= form.label :title, class: 'form-label' %>
         <%= form.text_field :title, class: 'form-control', required: true %>
@@ -45,30 +55,35 @@
         <%= form.label :description, class: 'form-label' %>
         <%= form.text_area :description, rows: 4, class: 'form-control' %>
       </div>
-      <div class="col-md-4">
-        <%= form.label :work_stream, 'Work Type', class: 'form-label' %>
-        <%= form.select :work_stream, AgendaItem.work_streams.keys.map { |key| [key.titleize, key] }, {}, class: 'form-select' %>
-      </div>
       <% unless current_user&.client? %>
+        <div class="col-md-4">
+          <%= form.label :work_stream, 'Work Type', class: 'form-label' %>
+          <%= form.select :work_stream, AgendaItem.work_streams.keys.map { |key| [key.titleize, key] }, {}, class: 'form-select' %>
+        </div>
         <div class="col-md-4">
           <%= form.label :status, class: 'form-label' %>
           <%= form.select :status, AgendaItem.statuses.keys.map { |key| [key.titleize, key] }, {}, class: 'form-select' %>
         </div>
       <% end %>
-      <div class="col-md-4">
-        <%= form.label :priority_level, 'Priority', class: 'form-label' %>
-        <%= form.select :priority_level, AgendaItem.priority_levels.keys.map { |key| [key.titleize, key] }, {}, class: 'form-select' %>
-      </div>
-      <% unless current_user&.client? %>
+      <% if current_user&.client? %>
+        <div class="col-md-4">
+          <%= form.label :priority_level, 'Priority', class: 'form-label' %>
+          <%= form.select :priority_level, AgendaItem.priority_levels.keys.map { |key| [key.titleize, key] }, {}, class: 'form-select' %>
+        </div>
+      <% else %>
+        <div class="col-md-4">
+          <%= form.label :priority_level, 'Priority', class: 'form-label' %>
+          <%= form.select :priority_level, AgendaItem.priority_levels.keys.map { |key| [key.titleize, key] }, {}, class: 'form-select' %>
+        </div>
         <div class="col-md-4">
           <%= form.label :complexity, class: 'form-label' %>
           <%= form.select :complexity, AgendaItem::COMPLEXITY_OPTIONS, {}, class: 'form-select' %>
         </div>
+        <div class="col-md-4">
+          <%= form.label :due_on, 'Due date', class: 'form-label' %>
+          <%= form.date_field :due_on, class: 'form-control' %>
+        </div>
       <% end %>
-      <div class="col-md-4">
-        <%= form.label :due_on, 'Due date', class: 'form-label' %>
-        <%= form.date_field :due_on, class: 'form-control' %>
-      </div>
       <% unless current_user&.client? %>
         <div class="col-md-4">
           <%= form.label :requested_by, class: 'form-label' %>
@@ -97,10 +112,12 @@
         <%= form.hidden_field :estimated_cost %>
         <%= form.hidden_field :paid %>
       <% end %>
-      <div class="col-12">
-        <%= form.label :notes, class: 'form-label' %>
-        <%= form.text_area :notes, rows: 3, class: 'form-control', placeholder: 'Internal notes for team context' %>
-      </div>
+      <% unless current_user&.client? %>
+        <div class="col-12">
+          <%= form.label :notes, class: 'form-label' %>
+          <%= form.text_area :notes, rows: 3, class: 'form-control', placeholder: 'Internal notes for team context' %>
+        </div>
+      <% end %>
     </div>
   </div>
   <div class="card-footer bg-white border-0 d-flex justify-content-end gap-2 mb-3">

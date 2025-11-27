@@ -1,6 +1,6 @@
 class AgendaItemsController < ApplicationController
   before_action :set_clients, only: %i[index new create edit update new_bulk create_bulk]
-  before_action :set_agenda_item, only: %i[show edit update destroy complete reopen rank]
+  before_action :set_agenda_item, only: %i[show edit update destroy complete reopen rank approve]
 
   def index
     authorize AgendaItem
@@ -66,9 +66,22 @@ class AgendaItemsController < ApplicationController
       @agenda_item.assignee_id = current_user.id
     end
     
-    # Default sprint to latest sprint for the client
-    if @agenda_item.client_id.present? && @agenda_item.sprint_id.blank?
-      # Find latest sprint for this client (through projects)
+    # For clients: auto-associate sprint if only one exists
+    if current_user&.client? && @agenda_item.client_id.present? && @agenda_item.sprint_id.blank?
+      client_sprints = Sprint.joins(:project)
+                            .where(projects: { client_id: @agenda_item.client_id })
+      if client_sprints.count == 1
+        @agenda_item.sprint_id = client_sprints.first.id
+      elsif client_sprints.count > 1
+        # If multiple sprints, default to latest
+        latest_sprint = @sprints.joins(:project)
+                               .where(projects: { client_id: @agenda_item.client_id })
+                               .order(start_date: :desc, created_at: :desc)
+                               .first
+        @agenda_item.sprint_id = latest_sprint&.id
+      end
+    elsif @agenda_item.client_id.present? && @agenda_item.sprint_id.blank?
+      # Default sprint to latest sprint for the client (non-client users)
       latest_sprint = @sprints.joins(:project)
                                .where(projects: { client_id: @agenda_item.client_id })
                                .order(start_date: :desc, created_at: :desc)
@@ -143,6 +156,17 @@ class AgendaItemsController < ApplicationController
     redirect_to @agenda_item, notice: 'Ranking recalculated.'
   end
 
+  def approve
+    authorize @agenda_item, :approve?
+    approved = params[:approved] == 'true' || params[:approved] == true
+    if @agenda_item.update(approved: approved)
+      ActivityLogger.log_changes(@agenda_item, current_user)
+      redirect_to @agenda_item, success: "Agenda item #{approved ? 'approved' : 'disapproved'}."
+    else
+      redirect_to @agenda_item, alert: 'Unable to update approval status.'
+    end
+  end
+
   def new_bulk
     authorize AgendaItem, :new?
     @default_assignee_id = current_user&.internal_role? ? current_user.id : nil
@@ -195,16 +219,21 @@ class AgendaItemsController < ApplicationController
   private
 
   def set_clients
+    @sprint_client_id = determine_form_client_id
+    @sprints = load_sprints
+    
     if current_user&.client? && current_user.client.present?
       @clients = [current_user.client]
       @assignees = []
+      # Count sprints for this client to determine if dropdown is needed
+      @client_sprints_count = @sprints.joins(:project)
+                                      .where(projects: { client_id: current_user.client_id })
+                                      .count
     else
       @clients = policy_scope(Client).ordered
       @assignees = User.active.order(:first_name, :last_name)
+      @client_sprints_count = nil
     end
-
-    @sprint_client_id = determine_form_client_id
-    @sprints = load_sprints
   end
 
   def set_agenda_item
@@ -255,11 +284,31 @@ class AgendaItemsController < ApplicationController
     return unless current_user&.client?
 
     item.client_id = current_user.client_id if current_user.client_id.present?
-    item.assignee_id = nil
+    
+    # Auto-assign to most frequent assignee for this client's agenda items
+    if item.assignee_id.blank? && item.client_id.present?
+      most_frequent_assignee = AgendaItem.where(client_id: item.client_id)
+                                         .where.not(assignee_id: nil)
+                                         .group(:assignee_id)
+                                         .count
+                                         .max_by { |_, count| count }
+      item.assignee_id = most_frequent_assignee&.first if most_frequent_assignee
+    end
+    
     item.status ||= :backlog
-    item.complexity ||= 3
+    item.complexity ||= 3 # Medium complexity
+    item.due_on ||= 12.hours.from_now.to_date # 12 hours from now
     item.requested_by = current_user.full_name
     item.requested_by_email = current_user.email
+
+    # Auto-associate sprint if only one exists for this client
+    if item.sprint_id.blank? && item.client_id.present?
+      client_sprints = Sprint.joins(:project)
+                            .where(projects: { client_id: item.client_id })
+      if client_sprints.count == 1
+        item.sprint_id = client_sprints.first.id
+      end
+    end
 
     if item.sprint.present? && item.sprint.project.client_id != current_user.client_id
       item.sprint = nil

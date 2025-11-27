@@ -46,9 +46,10 @@ module Admin
     end
 
     def user_params
-      permitted = %i[first_name last_name email role active time_zone client_id password password_confirmation]
+      permitted = %i[first_name last_name email role active time_zone client_id client_role password password_confirmation]
       params.require(:user).permit(permitted).tap do |hash|
         hash[:client_id] = nil if hash[:client_id].blank?
+        hash[:client_role] = nil unless hash[:role] == 'client'
       end
     end
 

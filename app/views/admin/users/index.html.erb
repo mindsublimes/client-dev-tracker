@@ -29,6 +29,9 @@
             </td>
             <td class="table-cell-small">
               <span class="badge bg-light text-dark text-uppercase"><%= user.display_role %></span>
+              <% if user.client? && user.client_role.present? %>
+                <span class="badge bg-info-subtle text-info ms-1"><%= user.client_role.titleize %></span>
+              <% end %>
             </td>
             <td class="table-cell-small">
               <% if user.client.present? %>

@@ -26,7 +26,7 @@
       </div>
       <div class="col-md-3">
         <%= form.label :role, class: 'form-label' %>
-        <%= form.select :role, @roles, {}, class: 'form-select' %>
+        <%= form.select :role, @roles, {}, class: 'form-select', data: { behavior: 'user-role-select' } %>
       </div>
       <div class="col-md-3">
         <%= form.label :active, class: 'form-label d-block' %>
@@ -41,7 +41,12 @@
       </div>
       <div class="col-md-6">
         <%= form.label :client_id, 'Client (for client-role users)', class: 'form-label' %>
-        <%= form.collection_select :client_id, @clients, :id, :name, { include_blank: 'Select client' }, class: 'form-select' %>
+        <%= form.collection_select :client_id, @clients, :id, :name, { include_blank: 'Select client' }, class: 'form-select', data: { behavior: 'client-select' } %>
+      </div>
+      <div class="col-md-6" id="client-role-field" style="<%= 'display: none;' unless @user.client? %>">
+        <%= form.label :client_role, 'Client Role', class: 'form-label' %>
+        <%= form.select :client_role, [['User', 'user'], ['Admin', 'admin']], { selected: @user.client_role || 'user' }, class: 'form-select' %>
+        <div class="form-text">Admin clients can see costs and approve requests</div>
       </div>
       <div class="col-md-6">
         <%= form.label :password, class: 'form-label' %>

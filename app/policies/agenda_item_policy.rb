@@ -42,6 +42,15 @@ class AgendaItemPolicy < ApplicationPolicy
     elevated_access?
   end
 
+  def approve?
+    return false unless user
+    # Client admins can approve items for their client
+    return true if user.client? && user.client_admin? && record.client_id == user.client_id
+    # Internal roles (admin, lead, analyst) can approve any item
+    return true if user.internal_role?
+    false
+  end
+
   class Scope < Scope
     def resolve
       return scope.none unless user

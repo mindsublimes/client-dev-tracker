@@ -10,6 +10,11 @@ class User < ApplicationRecord
     viewer: 4,
     client: 5
   }
+  
+  enum client_role: {
+    user: 0,
+    admin: 1
+  }, _prefix: :client
 
   belongs_to :client, optional: true
   has_many :assigned_agenda_items, class_name: 'AgendaItem', foreign_key: :assignee_id, inverse_of: :assignee, dependent: :nullify

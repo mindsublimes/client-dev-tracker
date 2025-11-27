@@ -14,8 +14,10 @@ document.addEventListener('DOMContentLoaded', () => {
   setupSelect2()
   setupGlobalSearch()
   setupNotificationDropdown()
+  setupBrowserNotifications()
   setupDateRangePicker()
   setupBulkAgendaForm()
+  setupClientRoleField()
 })
 
 function setupAlertDismissals() {
@@ -663,10 +665,160 @@ document.addEventListener('turbo:load', setupGlobalSearch)
 document.addEventListener('turbo:render', setupGlobalSearch)
 document.addEventListener('turbo:load', setupNotificationDropdown)
 document.addEventListener('turbo:render', setupNotificationDropdown)
+document.addEventListener('turbo:load', setupBrowserNotifications)
+document.addEventListener('turbo:render', setupBrowserNotifications)
 document.addEventListener('turbo:load', setupDateRangePicker)
 document.addEventListener('turbo:render', setupDateRangePicker)
 document.addEventListener('turbo:load', setupBulkAgendaForm)
 document.addEventListener('turbo:render', setupBulkAgendaForm)
+document.addEventListener('turbo:load', setupClientRoleField)
+document.addEventListener('turbo:render', setupClientRoleField)
+
+function setupClientRoleField() {
+  const roleSelect = document.querySelector('[data-behavior="user-role-select"]')
+  const clientRoleField = document.getElementById('client-role-field')
+  
+  if (!roleSelect || !clientRoleField) return
+  
+  function toggleClientRoleField() {
+    if (roleSelect.value === 'client') {
+      clientRoleField.style.display = 'block'
+    } else {
+      clientRoleField.style.display = 'none'
+    }
+  }
+  
+  // Set initial state
+  toggleClientRoleField()
+  
+  // Update on change
+  roleSelect.addEventListener('change', toggleClientRoleField)
+}
+
+function setupBrowserNotifications() {
+  // Request notification permission
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission()
+  }
+
+  // Get last notification ID from localStorage (persists across page refreshes)
+  const getLastNotificationId = () => {
+    const stored = localStorage.getItem('lastBrowserNotificationId')
+    return stored ? parseInt(stored, 10) : null
+  }
+
+  const setLastNotificationId = (id) => {
+    localStorage.setItem('lastBrowserNotificationId', id.toString())
+  }
+
+  // Check for new notifications periodically
+  let lastNotificationId = getLastNotificationId()
+  const notificationCheckInterval = 30000 // 30 seconds
+
+  function checkForNewNotifications() {
+    if (!('Notification' in window) || Notification.permission !== 'granted') {
+      return
+    }
+
+    const userId = document.body.dataset.userId
+    if (!userId) return
+
+    fetch(`/notifications.json?unread_only=true&last_id=${lastNotificationId || ''}`, {
+      headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.notifications && data.notifications.length > 0) {
+        data.notifications.forEach(notification => {
+          if (!lastNotificationId || notification.id > lastNotificationId) {
+            showBrowserNotification(notification)
+            lastNotificationId = Math.max(lastNotificationId || 0, notification.id)
+            setLastNotificationId(lastNotificationId)
+          }
+        })
+      }
+    })
+    .catch(error => {
+      console.error('Error checking notifications:', error)
+    })
+  }
+
+  function showBrowserNotification(notification) {
+    if (Notification.permission === 'granted') {
+      const notificationObj = new Notification('DevTracker Notification', {
+        body: notification.message,
+        icon: '/favicon.ico',
+        tag: `notification-${notification.id}`,
+        requireInteraction: false,
+        badge: '/favicon.ico'
+      })
+
+      notificationObj.onclick = function() {
+        window.focus()
+        if (notification.agenda_item_id) {
+          window.location.href = `/agenda_items/${notification.agenda_item_id}`
+        }
+        notificationObj.close()
+      }
+
+      // Auto close after 5 seconds
+      setTimeout(() => {
+        notificationObj.close()
+      }, 5000)
+    }
+  }
+
+  // Listen for when notifications are marked as read to update the last seen ID
+  document.addEventListener('click', (e) => {
+    // Check if user clicked on "mark all read" or a notification link
+    const markAllReadBtn = e.target.closest('[href*="mark_all_read"], button[formaction*="mark_all_read"]')
+    const notificationLink = e.target.closest('[data-behavior="notification-link"], .notification-item')
+    
+    if (markAllReadBtn || notificationLink) {
+      // Update last notification ID to current max to prevent showing old notifications
+      fetch('/notifications.json?unread_only=false', {
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'same-origin'
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.notifications && data.notifications.length > 0) {
+          const maxId = Math.max(...data.notifications.map(n => n.id))
+          setLastNotificationId(maxId)
+          lastNotificationId = maxId
+        }
+      })
+      .catch(() => {
+        // Silently fail
+      })
+    }
+  })
+
+  // Start checking for notifications
+  if (Notification.permission === 'granted') {
+    checkForNewNotifications()
+    setInterval(checkForNewNotifications, notificationCheckInterval)
+  } else if (Notification.permission === 'default') {
+    // If permission is still default, try requesting again after a delay
+    setTimeout(() => {
+      if (Notification.permission === 'default') {
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            checkForNewNotifications()
+            setInterval(checkForNewNotifications, notificationCheckInterval)
+          }
+        })
+      }
+    }, 2000)
+  }
+}
 
 function setupBulkAgendaForm() {
   const container = document.getElementById('bulk-items-container');

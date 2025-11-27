@@ -18,7 +18,7 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
   </head>
 
-  <body class="bg-body-tertiary">
+  <body class="bg-body-tertiary" data-user-id="<%= user_signed_in? ? current_user.id : '' %>">
     <nav class="navbar navbar-expand-lg navbar-light bg-sidebar shadow-sm">
       <div class="container-fluid">
         <% if user_signed_in? %>
@@ -112,6 +112,9 @@
                   <div class="dropdown-item-text">
                     <div class="small text-muted">Signed in as</div>
                     <div class="fw-semibold"><%= current_user.full_name.presence || current_user.email %></div>
+                    <% if current_user.client? %>
+                      <div class="small text-muted mt-1">Role: <%= current_user.client_role.titleize %></div>
+                    <% end %>
                   </div>
                 </li>
                 <li><hr class="dropdown-divider"></li>

@@ -7,10 +7,15 @@
       <span class="badge bg-<%= @agenda_item.priority_badge_color %>">Priority <%= @agenda_item.priority_level.titleize %></span>
       <span class="badge bg-secondary">Complexity <%= @agenda_item.complexity_label %></span>
       <span class="badge client-code-badge">Rank <%= @agenda_item.rank_score %></span>
+      <% if @agenda_item.approved? %>
+        <span class="badge" style="background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0;">Approved</span>
+      <% else %>
+        <span class="badge" style="background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca;">Not Approved</span>
+      <% end %>
     </div>
   </div>
-  <% if policy(@agenda_item).update? %>
-    <div class="d-flex flex-wrap gap-2">
+  <div class="d-flex flex-wrap gap-2">
+    <% if policy(@agenda_item).update? %>
       <%= link_to 'Edit', edit_agenda_item_path(@agenda_item), class: 'btn btn-outline-dark' %>
       <% if policy(@agenda_item).complete? %>
         <% if @agenda_item.completed? %>
@@ -19,8 +24,15 @@
           <%= button_to 'Mark complete', complete_agenda_item_path(@agenda_item), method: :patch, class: 'btn btn-new-agenda' %>
         <% end %>
       <% end %>
-    </div>
-  <% end %>
+    <% end %>
+    <% if policy(@agenda_item).approve? %>
+      <% if @agenda_item.approved? %>
+        <%= button_to 'Disapprove', approve_agenda_item_path(@agenda_item, approved: false), method: :patch, class: 'btn btn-outline-danger' %>
+      <% else %>
+        <%= button_to 'Approve', approve_agenda_item_path(@agenda_item, approved: true), method: :patch, class: 'btn', style: 'background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0;' %>
+      <% end %>
+    <% end %>
+  </div>
 </div>
 
 <div class="row g-4">
@@ -67,14 +79,16 @@
               <div class="small text-muted"><%= @agenda_item.requested_by_email %></div>
             <% end %>
           </div>
-          <div class="col-md-6">
-            <div class="text-muted small">Cost</div>
-            <% if @agenda_item.estimated_cost.present? %>
-              <div class="fw-semibold">$<%= number_with_precision(@agenda_item.estimated_cost, precision: 2) %> <span class="badge bg-<%= @agenda_item.paid? ? 'success' : 'warning' %> ms-2"><%= @agenda_item.paid? ? 'Paid' : 'Unpaid' %></span></div>
-            <% else %>
-              <div class="fw-semibold">Not estimated</div>
-            <% end %>
-          </div>
+          <% if current_user&.internal_role? || (current_user&.client? && current_user.client_admin?) %>
+            <div class="col-md-6">
+              <div class="text-muted small">Cost</div>
+              <% if @agenda_item.estimated_cost.present? %>
+                <div class="fw-semibold">$<%= number_with_precision(@agenda_item.estimated_cost, precision: 2) %> <span class="badge bg-<%= @agenda_item.paid? ? 'success' : 'warning' %> ms-2"><%= @agenda_item.paid? ? 'Paid' : 'Unpaid' %></span></div>
+              <% else %>
+                <div class="fw-semibold">Not estimated</div>
+              <% end %>
+            </div>
+          <% end %>
           <% unless current_user&.client? %>
             <div class="col-md-6">
               <div class="text-muted small">Notes</div>

@@ -33,6 +33,13 @@
             </li>
           <% end %>
 
+          <li class="sidebar-item">
+            <%= link_to reports_path, class: "sidebar-link #{'active' if request.path.start_with?('/reports')}" do %>
+              <i class="bi bi-file-earmark-bar-graph"></i>
+              <span>Reports</span>
+            <% end %>
+          </li>
+
           <% unless current_user.client? %>
             <li class="sidebar-item">
               <%= link_to clients_path, class: "sidebar-link #{'active' if request.path.start_with?('/clients')}" do %>

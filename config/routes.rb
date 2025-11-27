@@ -28,6 +28,7 @@ Rails.application.routes.draw do
       patch :complete
       patch :reopen
       post :rank
+      patch :approve
     end
 
     resources :agenda_messages, only: :create
@@ -42,6 +43,7 @@ Rails.application.routes.draw do
   resources :calendars, only: :index
   resources :assignee_productivity, only: :index
   resources :searches, only: :index
+  resources :reports, only: :index
   resources :notifications, only: [:index, :update] do
     collection do
       patch :mark_all_read
