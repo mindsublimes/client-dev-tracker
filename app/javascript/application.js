@@ -696,9 +696,10 @@ function setupClientRoleField() {
 }
 
 function setupBrowserNotifications() {
-  // Request notification permission
-  if ('Notification' in window && Notification.permission === 'default') {
-    Notification.requestPermission()
+  // Check if browser supports notifications
+  if (!('Notification' in window)) {
+    console.log('Browser does not support notifications')
+    return
   }
 
   // Get last notification ID from localStorage (persists across page refreshes)
@@ -713,42 +714,73 @@ function setupBrowserNotifications() {
 
   // Check for new notifications periodically
   let lastNotificationId = getLastNotificationId()
+  let checkInterval = null
   const notificationCheckInterval = 30000 // 30 seconds
 
   function checkForNewNotifications() {
-    if (!('Notification' in window) || Notification.permission !== 'granted') {
+    if (Notification.permission !== 'granted') {
+      console.warn('[Browser Notifications] Permission not granted:', Notification.permission)
       return
     }
 
     const userId = document.body.dataset.userId
-    if (!userId) return
+    if (!userId) {
+      console.error('[Browser Notifications] User ID not found in body data attribute. Check if data-user-id is set on <body> tag.')
+      return
+    }
 
-    fetch(`/notifications.json?unread_only=true&last_id=${lastNotificationId || ''}`, {
+    const url = `/notifications.json?unread_only=true&last_id=${lastNotificationId || ''}`
+    console.log('[Browser Notifications] Checking for notifications:', url)
+
+    fetch(url, {
       headers: {
         'Accept': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest'
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
       },
       credentials: 'same-origin'
     })
-    .then(response => response.json())
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}, statusText: ${response.statusText}`)
+      }
+      return response.json()
+    })
     .then(data => {
+      console.log('[Browser Notifications] Response received:', data)
       if (data.notifications && data.notifications.length > 0) {
+        console.log(`[Browser Notifications] Found ${data.notifications.length} new notification(s)`)
         data.notifications.forEach(notification => {
           if (!lastNotificationId || notification.id > lastNotificationId) {
+            console.log('[Browser Notifications] Showing notification:', notification.id, notification.message)
             showBrowserNotification(notification)
             lastNotificationId = Math.max(lastNotificationId || 0, notification.id)
             setLastNotificationId(lastNotificationId)
+          } else {
+            console.log('[Browser Notifications] Skipping notification (already seen):', notification.id)
           }
         })
+      } else {
+        console.log('[Browser Notifications] No new notifications found')
       }
     })
     .catch(error => {
-      console.error('Error checking notifications:', error)
+      console.error('[Browser Notifications] ERROR checking notifications:', error)
+      console.error('[Browser Notifications] Error details:', {
+        message: error.message,
+        stack: error.stack,
+        url: url
+      })
     })
   }
 
   function showBrowserNotification(notification) {
-    if (Notification.permission === 'granted') {
+    if (Notification.permission !== 'granted') {
+      console.warn('[Browser Notifications] Cannot show notification - permission not granted')
+      return
+    }
+
+    try {
       const notificationObj = new Notification('DevTracker Notification', {
         body: notification.message,
         icon: '/favicon.ico',
@@ -756,6 +788,8 @@ function setupBrowserNotifications() {
         requireInteraction: false,
         badge: '/favicon.ico'
       })
+
+      console.log('[Browser Notifications] Notification displayed successfully:', notification.id)
 
       notificationObj.onclick = function() {
         window.focus()
@@ -765,11 +799,51 @@ function setupBrowserNotifications() {
         notificationObj.close()
       }
 
+      notificationObj.onerror = function(error) {
+        console.error('[Browser Notifications] Notification error:', error)
+      }
+
       // Auto close after 5 seconds
       setTimeout(() => {
         notificationObj.close()
       }, 5000)
+    } catch (error) {
+      console.error('[Browser Notifications] ERROR creating notification:', error)
+      console.error('[Browser Notifications] Error details:', {
+        message: error.message,
+        stack: error.stack,
+        notification: notification
+      })
     }
+  }
+
+  // Request notification permission if needed
+  console.log('[Browser Notifications] Initializing. Current permission:', Notification.permission)
+  
+  if (Notification.permission === 'default') {
+    console.log('[Browser Notifications] Requesting permission...')
+    Notification.requestPermission().then(permission => {
+      console.log('[Browser Notifications] Permission result:', permission)
+      if (permission === 'granted') {
+        // Start checking immediately and set up interval
+        console.log('[Browser Notifications] Permission granted. Starting notification checks...')
+        checkForNewNotifications()
+        if (checkInterval) clearInterval(checkInterval)
+        checkInterval = setInterval(checkForNewNotifications, notificationCheckInterval)
+      } else {
+        console.warn('[Browser Notifications] Permission denied or dismissed:', permission)
+      }
+    }).catch(error => {
+      console.error('[Browser Notifications] ERROR requesting permission:', error)
+    })
+  } else if (Notification.permission === 'granted') {
+    // Permission already granted, start checking
+    console.log('[Browser Notifications] Permission already granted. Starting notification checks...')
+    checkForNewNotifications()
+    if (checkInterval) clearInterval(checkInterval)
+    checkInterval = setInterval(checkForNewNotifications, notificationCheckInterval)
+  } else {
+    console.warn('[Browser Notifications] Permission denied. User must enable notifications in browser settings.')
   }
 
   // Listen for when notifications are marked as read to update the last seen ID
@@ -783,7 +857,8 @@ function setupBrowserNotifications() {
       fetch('/notifications.json?unread_only=false', {
         headers: {
           'Accept': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest'
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
         },
         credentials: 'same-origin'
       })
@@ -795,29 +870,11 @@ function setupBrowserNotifications() {
           lastNotificationId = maxId
         }
       })
-      .catch(() => {
-        // Silently fail
+      .catch(error => {
+        console.error('Error updating last notification ID:', error)
       })
     }
   })
-
-  // Start checking for notifications
-  if (Notification.permission === 'granted') {
-    checkForNewNotifications()
-    setInterval(checkForNewNotifications, notificationCheckInterval)
-  } else if (Notification.permission === 'default') {
-    // If permission is still default, try requesting again after a delay
-    setTimeout(() => {
-      if (Notification.permission === 'default') {
-        Notification.requestPermission().then(permission => {
-          if (permission === 'granted') {
-            checkForNewNotifications()
-            setInterval(checkForNewNotifications, notificationCheckInterval)
-          }
-        })
-      }
-    }, 2000)
-  }
 }
 
 function setupBulkAgendaForm() {

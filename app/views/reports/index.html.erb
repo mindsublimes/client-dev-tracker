@@ -1,7 +1,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
   <div>
-    <h1 class="h3 mb-0">Activity Reports</h1>
-    <p class="text-muted mb-0">Daily work summary and activity analytics</p>
+    <h1 class="h3 mb-0">Dashboard</h1>
+    <p class="text-muted mb-0">Work summary and agenda item analytics</p>
   </div>
   <%= form_with url: reports_path, method: :get, local: true, class: 'd-flex gap-2 align-items-end' do |form| %>
     <div>
@@ -23,10 +23,10 @@
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-center">
           <div>
-            <div class="text-muted small mb-1">Total Activities</div>
-            <div class="h4 mb-0"><%= @total_activities %></div>
+            <div class="text-muted small mb-1">Total Items</div>
+            <div class="h4 mb-0"><%= @total_items %></div>
           </div>
-          <i class="bi bi-activity text-primary" style="font-size: 2rem; opacity: 0.3;"></i>
+          <i class="bi bi-list-check text-primary" style="font-size: 2rem; opacity: 0.3;"></i>
         </div>
       </div>
     </div>
@@ -36,36 +36,36 @@
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-center">
           <div>
-            <div class="text-muted small mb-1">Agenda Items</div>
-            <div class="h4 mb-0"><%= @total_agenda_items %></div>
-          </div>
-          <i class="bi bi-list-check text-info" style="font-size: 2rem; opacity: 0.3;"></i>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-3">
-    <div class="card shadow-sm border-0 h-100">
-      <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center">
-          <div>
-            <div class="text-muted small mb-1">Status Changes</div>
-            <div class="h4 mb-0"><%= @status_changes %></div>
-          </div>
-          <i class="bi bi-arrow-repeat text-warning" style="font-size: 2rem; opacity: 0.3;"></i>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-3">
-    <div class="card shadow-sm border-0 h-100">
-      <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center">
-          <div>
-            <div class="text-muted small mb-1">Items Completed</div>
-            <div class="h4 mb-0"><%= @items_completed %></div>
+            <div class="text-muted small mb-1">Completed</div>
+            <div class="h4 mb-0 text-success"><%= @total_completed %></div>
           </div>
           <i class="bi bi-check-circle text-success" style="font-size: 2rem; opacity: 0.3;"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card shadow-sm border-0 h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="text-muted small mb-1">In Progress</div>
+            <div class="h4 mb-0 text-info"><%= @total_in_progress %></div>
+          </div>
+          <i class="bi bi-arrow-repeat text-info" style="font-size: 2rem; opacity: 0.3;"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card shadow-sm border-0 h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="text-muted small mb-1">Overdue</div>
+            <div class="h4 mb-0 text-danger"><%= @total_overdue %></div>
+          </div>
+          <i class="bi bi-exclamation-triangle text-danger" style="font-size: 2rem; opacity: 0.3;"></i>
         </div>
       </div>
     </div>
@@ -73,72 +73,169 @@
 </div>
 
 <div class="row g-4">
-  <!-- Daily Activity Chart -->
+  <!-- Tasks Created vs Completed Chart -->
   <div class="col-lg-8">
     <div class="card shadow-sm border-0">
       <div class="card-header bg-white section-header">
-        <h5 class="mb-0">Daily Activity Overview</h5>
+        <h5 class="mb-0">Tasks Created vs Completed</h5>
       </div>
       <div class="card-body">
-        <canvas id="dailyActivityChart" height="100"></canvas>
+        <canvas id="tasksChart" height="100"></canvas>
       </div>
     </div>
   </div>
   
-  <!-- Activity by Type -->
+  <!-- Items by Priority -->
   <div class="col-lg-4">
     <div class="card shadow-sm border-0">
       <div class="card-header bg-white section-header">
-        <h5 class="mb-0">Activity by Type</h5>
+        <h5 class="mb-0">Items by Priority</h5>
       </div>
       <div class="card-body">
-        <canvas id="activityTypeChart"></canvas>
+        <canvas id="priorityChart"></canvas>
       </div>
     </div>
   </div>
 </div>
 
 <div class="row g-4 mt-2">
-  <!-- Activity by User -->
+  <!-- Items by Status (Horizontal Bar) -->
   <div class="col-lg-6">
     <div class="card shadow-sm border-0">
       <div class="card-header bg-white section-header">
-        <h5 class="mb-0">Activity by User</h5>
+        <h5 class="mb-0">Items by Status</h5>
       </div>
       <div class="card-body">
-        <canvas id="activityByUserChart"></canvas>
+        <canvas id="statusChart"></canvas>
       </div>
     </div>
   </div>
   
-  <!-- Daily Breakdown Table -->
+  <!-- What's Being Worked On -->
   <div class="col-lg-6">
     <div class="card shadow-sm border-0">
       <div class="card-header bg-white section-header">
-        <h5 class="mb-0">Daily Breakdown</h5>
+        <h5 class="mb-0">Currently In Progress</h5>
       </div>
       <div class="card-body">
         <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
           <table class="table table-sm">
             <thead class="sticky-top bg-white">
               <tr>
-                <th>Date</th>
-                <th class="text-end">Total</th>
-                <th class="text-end">Status</th>
-                <th class="text-end">Messages</th>
-                <th class="text-end">Completed</th>
-                <th class="text-end">Created</th>
+                <th>Item</th>
+                <th>Assignee</th>
+                <th>Due Date</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>
-              <% @daily_breakdown.sort.reverse.each do |date, data| %>
+              <% if @items_in_progress.any? %>
+                <% @items_in_progress.limit(20).each do |item| %>
+                  <tr>
+                    <td>
+                      <%= link_to item.title, agenda_item_path(item), class: 'text-decoration-none' %>
+                      <div class="small text-muted"><%= item.client.name %></div>
+                    </td>
+                    <td><%= item.assignee&.full_name || 'Unassigned' %></td>
+                    <td>
+                      <%= item.due_on&.strftime('%b %d, %Y') || '—' %>
+                      <% if item.due_on && item.due_on < Date.current %>
+                        <span class="badge bg-danger ms-1">Overdue</span>
+                      <% end %>
+                    </td>
+                    <td><span class="badge bg-<%= item.status_badge_color %>"><%= item.status.titleize %></span></td>
+                  </tr>
+                <% end %>
+              <% else %>
                 <tr>
-                  <td><%= date.strftime('%b %d, %Y') %></td>
-                  <td class="text-end"><%= data[:total] %></td>
-                  <td class="text-end"><%= data[:status_changes] %></td>
-                  <td class="text-end"><%= data[:messages] %></td>
-                  <td class="text-end"><%= data[:completions] %></td>
-                  <td class="text-end"><%= data[:creations] %></td>
+                  <td colspan="4" class="text-center text-muted py-3">No items currently in progress</td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mt-2">
+  <!-- Overdue Items -->
+  <div class="col-lg-6">
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-white section-header">
+        <h5 class="mb-0">Overdue Items</h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+          <table class="table table-sm">
+            <thead class="sticky-top bg-white">
+              <tr>
+                <th>Item</th>
+                <th>Days Overdue</th>
+                <th>Assignee</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if @overdue_items_with_days.any? %>
+                <% @overdue_items_with_days.first(20).each do |data| %>
+                  <% item = data[:item] %>
+                  <tr>
+                    <td>
+                      <%= link_to item.title, agenda_item_path(item), class: 'text-decoration-none' %>
+                      <div class="small text-muted"><%= item.client.name %></div>
+                    </td>
+                    <td>
+                      <span class="badge bg-danger"><%= pluralize(data[:days_overdue], 'day') %></span>
+                    </td>
+                    <td><%= item.assignee&.full_name || 'Unassigned' %></td>
+                    <td><span class="badge bg-<%= item.status_badge_color %>"><%= item.status.titleize %></span></td>
+                  </tr>
+                <% end %>
+              <% else %>
+                <tr>
+                  <td colspan="4" class="text-center text-muted py-3">No overdue items</td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Recent Completions -->
+  <div class="col-lg-6">
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-white section-header">
+        <h5 class="mb-0">Recent Completions (Last 7 Days)</h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+          <table class="table table-sm">
+            <thead class="sticky-top bg-white">
+              <tr>
+                <th>Item</th>
+                <th>Completed</th>
+                <th>Assignee</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if @recent_completions.any? %>
+                <% @recent_completions.each do |item| %>
+                  <tr>
+                    <td>
+                      <%= link_to item.title, agenda_item_path(item), class: 'text-decoration-none' %>
+                      <div class="small text-muted"><%= item.client.name %></div>
+                    </td>
+                    <td><%= item.completed_at&.strftime('%b %d, %Y') || '—' %></td>
+                    <td><%= item.assignee&.full_name || 'Unassigned' %></td>
+                  </tr>
+                <% end %>
+              <% else %>
+                <tr>
+                  <td colspan="3" class="text-center text-muted py-3">No recent completions</td>
                 </tr>
               <% end %>
             </tbody>
@@ -152,29 +249,43 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  // Daily Activity Chart
-  const dailyCtx = document.getElementById('dailyActivityChart');
-  if (dailyCtx) {
-    const dailyData = <%= @daily_breakdown.map { |date, data| [date.strftime('%b %d'), data[:total]] }.to_h.to_json.html_safe %>;
-    new Chart(dailyCtx, {
+  // Tasks Created vs Completed Chart (Dual Line)
+  const tasksCtx = document.getElementById('tasksChart');
+  if (tasksCtx) {
+    const createdData = <%= @tasks_created_by_date.map { |date, count| [date.strftime('%b %d'), count] }.to_h.to_json.html_safe %>;
+    const completedData = <%= @tasks_completed_by_date.map { |date, count| [date.strftime('%b %d'), count] }.to_h.to_json.html_safe %>;
+    const labels = Object.keys(createdData);
+    
+    new Chart(tasksCtx, {
       type: 'line',
       data: {
-        labels: Object.keys(dailyData),
-        datasets: [{
-          label: 'Total Activities',
-          data: Object.values(dailyData),
-          borderColor: 'rgb(59, 130, 246)',
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
-          tension: 0.4,
-          fill: true
-        }]
+        labels: labels,
+        datasets: [
+          {
+            label: 'Created',
+            data: Object.values(createdData),
+            borderColor: 'rgb(59, 130, 246)',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            tension: 0.4,
+            fill: true
+          },
+          {
+            label: 'Completed',
+            data: Object.values(completedData),
+            borderColor: 'rgb(16, 185, 129)',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            tension: 0.4,
+            fill: true
+          }
+        ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: true,
         plugins: {
           legend: {
-            display: true
+            display: true,
+            position: 'top'
           }
         },
         scales: {
@@ -189,26 +300,25 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Activity by Type Chart
-  const typeCtx = document.getElementById('activityTypeChart');
-  if (typeCtx) {
-    const typeData = <%= @activity_by_type.to_json.html_safe %>;
+  // Items by Priority Chart (Pie)
+  const priorityCtx = document.getElementById('priorityChart');
+  if (priorityCtx) {
+    const priorityData = <%= @items_by_priority.to_json.html_safe %>;
     const formatLabel = (str) => {
       return str.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     };
-    new Chart(typeCtx, {
+    
+    new Chart(priorityCtx, {
       type: 'doughnut',
       data: {
-        labels: Object.keys(typeData).map(formatLabel),
+        labels: Object.keys(priorityData).map(formatLabel),
         datasets: [{
-          data: Object.values(typeData),
+          data: Object.values(priorityData),
           backgroundColor: [
-            'rgba(59, 130, 246, 0.8)',
-            'rgba(16, 185, 129, 0.8)',
-            'rgba(245, 158, 11, 0.8)',
-            'rgba(239, 68, 68, 0.8)',
-            'rgba(139, 92, 246, 0.8)',
-            'rgba(236, 72, 153, 0.8)'
+            'rgba(108, 117, 125, 0.8)',  // Low - gray
+            'rgba(59, 130, 246, 0.8)',   // Normal - blue
+            'rgba(245, 158, 11, 0.8)',   // High - yellow
+            'rgba(239, 68, 68, 0.8)'     // Urgent - red
           ]
         }]
       },
@@ -224,18 +334,31 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Activity by User Chart
-  const userCtx = document.getElementById('activityByUserChart');
-  if (userCtx) {
-    const userData = <%= @activity_by_user.to_json.html_safe %>;
-    new Chart(userCtx, {
+  // Items by Status Chart (Horizontal Bar)
+  const statusCtx = document.getElementById('statusChart');
+  if (statusCtx) {
+    const statusData = <%= @items_by_status.to_json.html_safe %>;
+    const formatLabel = (str) => {
+      return str.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    };
+    
+    new Chart(statusCtx, {
       type: 'bar',
       data: {
-        labels: Object.keys(userData),
+        labels: Object.keys(statusData).map(formatLabel),
         datasets: [{
-          label: 'Activities',
-          data: Object.values(userData),
-          backgroundColor: 'rgba(59, 130, 246, 0.8)'
+          label: 'Items',
+          data: Object.values(statusData),
+          backgroundColor: [
+            'rgba(108, 117, 125, 0.8)',  // Backlog
+            'rgba(59, 130, 246, 0.8)',   // Scoped
+            'rgba(16, 185, 129, 0.8)',   // In Progress
+            'rgba(245, 158, 11, 0.8)',   // Blocked
+            'rgba(139, 92, 246, 0.8)',   // In Review
+            'rgba(34, 197, 94, 0.8)',    // Completed
+            'rgba(156, 163, 175, 0.8)',  // Archived
+            'rgba(239, 68, 68, 0.8)'      // Cancelled
+          ]
         }]
       },
       options: {
