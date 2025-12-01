@@ -13,6 +13,7 @@ class AgendaItem < ApplicationRecord
   belongs_to :project, optional: true
   belongs_to :sprint
   belongs_to :assignee, class_name: 'User', optional: true
+  belongs_to :instruction, optional: true
 
   has_many :agenda_messages, dependent: :destroy
   has_many :activity_logs, dependent: :destroy

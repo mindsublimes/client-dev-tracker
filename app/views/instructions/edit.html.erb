@@ -1,0 +1,11 @@
+<div class="d-flex justify-content-between align-items-start mb-4">
+  <div>
+    <p class="text-muted mb-1">
+      <%= link_to @page.project.name, project_path(@page.project), class: 'text-decoration-none' %> /
+      <%= link_to @page.title, project_page_path(@page.project, @page), class: 'text-decoration-none' %>
+    </p>
+    <h1 class="h3 mb-0">Edit Instruction</h1>
+  </div>
+</div>
+
+<%= render 'form', instruction: @instruction, page: @page, project: @page.project %>

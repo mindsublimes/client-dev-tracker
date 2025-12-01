@@ -16,3 +16,4 @@ class Notification < ApplicationRecord
   end
 end
 
+

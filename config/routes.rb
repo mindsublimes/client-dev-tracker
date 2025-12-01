@@ -11,7 +11,11 @@ Rails.application.routes.draw do
 
   resources :clients, except: :destroy
 
-  resources :projects, except: :destroy
+  resources :projects, except: :destroy do
+    resources :pages, except: :destroy do
+      resources :instructions, except: :destroy
+    end
+  end
   resources :sprints, except: :destroy
 
   namespace :admin do

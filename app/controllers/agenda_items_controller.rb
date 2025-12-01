@@ -221,6 +221,7 @@ class AgendaItemsController < ApplicationController
   def set_clients
     @sprint_client_id = determine_form_client_id
     @sprints = load_sprints
+    @instructions = policy_scope(Instruction).includes(page: :project).order('pages.title', :title)
     
     if current_user&.client? && current_user.client.present?
       @clients = [current_user.client]
@@ -244,12 +245,12 @@ class AgendaItemsController < ApplicationController
   def agenda_item_params
     if current_user&.client?
       params.require(:agenda_item).permit(:title, :description, :work_stream, :priority_level, :due_on, :notes,
-                                          :sprint_id)
+                                          :sprint_id, :instruction_id)
     else
       params.require(:agenda_item).permit(:client_id, :assignee_id, :title, :description, :work_stream, :status,
                                           :priority_level, :complexity, :due_on, :started_on, :completed_at,
                                           :estimated_cost, :paid, :requested_by, :requested_by_email, :notes,
-                                          :sprint_id)
+                                          :sprint_id, :instruction_id)
     end
   end
 

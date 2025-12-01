@@ -1,0 +1,152 @@
+<div class="d-flex justify-content-between align-items-start mb-4">
+  <div>
+    <p class="text-muted mb-1">
+      <%= link_to @page.project.name, project_path(@page.project), class: 'text-decoration-none' %> /
+      <%= link_to @page.title, project_page_path(@page.project, @page), class: 'text-decoration-none' %>
+    </p>
+    <h1 class="h3 mb-2"><%= @instruction.title %></h1>
+    <% if @instruction.description.present? %>
+      <p class="text-muted"><%= @instruction.description %></p>
+    <% end %>
+  </div>
+  <div>
+    <% if policy(@instruction).update? %>
+      <%= link_to 'Edit Instruction', edit_project_page_instruction_path(@page.project, @page, @instruction), class: 'btn btn-outline-dark' %>
+    <% end %>
+    <%= link_to 'Back to Page', project_page_path(@page.project, @page), class: 'btn btn-outline-secondary' %>
+  </div>
+</div>
+
+<% if @instruction.image.attached? %>
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="card-title mb-3">Instruction Image</h5>
+      <div class="position-relative" id="instruction-image-container" style="border: 1px solid #dee2e6; padding: 10px; background: #f8f9fa;">
+        <%= image_tag @instruction.image, alt: @instruction.title, id: 'instruction-display-image', style: 'max-width: 100%; display: block;' %>
+        <canvas id="instruction-dots-canvas" style="position: absolute; top: 10px; left: 10px; pointer-events: none;"></canvas>
+      </div>
+      <% if @instruction.dots_data.present? && @instruction.dots_data.any? %>
+        <div class="mt-3">
+          <h6>Interactive Points</h6>
+          <p class="text-muted small">Click on the pulsing red dots in the image above to see explanations.</p>
+          <div class="row g-2">
+            <% @instruction.dots_data.each_with_index do |dot, index| %>
+              <div class="col-md-6">
+                <div class="card mb-2">
+                  <div class="card-body p-2">
+                    <strong>Point <%= index + 1 %></strong> (<%= dot['x'] %>%, <%= dot['y'] %>%)
+                    <div class="text-muted small mt-1"><%= dot['blurb'] %></div>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% else %>
+        <div class="alert alert-info mt-3">
+          No interactive points have been added to this instruction yet. 
+          <% if policy(@instruction).update? %>
+            <%= link_to 'Edit the instruction', edit_project_page_instruction_path(@page.project, @page, @instruction) %> to add pulsing dots with explanations.
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% else %>
+  <div class="alert alert-info">
+    No image has been uploaded for this instruction yet.
+    <% if policy(@instruction).update? %>
+      <%= link_to 'Edit the instruction', edit_project_page_instruction_path(@page.project, @page, @instruction) %> to add an image.
+    <% end %>
+  </div>
+<% end %>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    <% if @instruction.image.attached? && @instruction.dots_data.present? && @instruction.dots_data.any? %>
+      setupInstructionDotsShowPage(<%= @instruction.dots_data.to_json.html_safe %>);
+    <% end %>
+  });
+
+  function setupInstructionDotsShowPage(dotsData) {
+    const imageContainer = document.getElementById('instruction-image-container');
+    const image = document.getElementById('instruction-display-image');
+    const canvas = document.getElementById('instruction-dots-canvas');
+
+    if (!imageContainer || !image || !canvas) return;
+
+    let animationFrame = null;
+    let pulsePhase = 0;
+
+    function drawDots() {
+      if (!image.complete) {
+        requestAnimationFrame(drawDots);
+        return;
+      }
+
+      const rect = imageContainer.getBoundingClientRect();
+      const imageRect = image.getBoundingClientRect();
+      canvas.width = imageRect.width;
+      canvas.height = imageRect.height;
+      canvas.style.top = imageRect.top - rect.top + 'px';
+      canvas.style.left = imageRect.left - rect.left + 'px';
+
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      pulsePhase += 0.1;
+      const pulseSize = 8 + Math.sin(pulsePhase) * 3;
+
+      dotsData.forEach((dot, index) => {
+        const x = (parseFloat(dot.x) / 100) * canvas.width;
+        const y = (parseFloat(dot.y) / 100) * canvas.height;
+
+        // Draw pulsing dot
+        ctx.beginPath();
+        ctx.arc(x, y, pulseSize, 0, 2 * Math.PI);
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.8)';
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Draw number
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText((index + 1).toString(), x, y);
+      });
+
+      animationFrame = requestAnimationFrame(drawDots);
+    }
+
+    // Make dots clickable
+    imageContainer.addEventListener('click', (e) => {
+      const rect = imageContainer.getBoundingClientRect();
+      const clickX = ((e.clientX - rect.left) / rect.width) * 100;
+      const clickY = ((e.clientY - rect.top) / rect.height) * 100;
+
+      dotsData.forEach((dot, index) => {
+        const dotX = parseFloat(dot.x);
+        const dotY = parseFloat(dot.y);
+        const distance = Math.sqrt(Math.pow(clickX - dotX, 2) + Math.pow(clickY - dotY, 2));
+
+        if (distance < 3) {
+          // Show blurb in a tooltip
+          const tooltip = document.createElement('div');
+          tooltip.className = 'alert alert-info position-absolute';
+          tooltip.style.cssText = `top: ${e.clientY - rect.top}px; left: ${e.clientX - rect.left}px; z-index: 1000; max-width: 300px; transform: translate(-50%, -100%); margin-top: -10px;`;
+          tooltip.innerHTML = `<strong>Point ${index + 1}</strong><br>${dot.blurb}`;
+          imageContainer.appendChild(tooltip);
+
+          setTimeout(() => {
+            tooltip.remove();
+          }, 5000);
+        }
+      });
+    });
+
+    drawDots();
+  }
+</script>

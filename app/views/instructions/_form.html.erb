@@ -1,0 +1,63 @@
+<%= form_with(model: [project, page, instruction], class: 'card shadow-sm border-0', html: { multipart: true }) do |form| %>
+  <div class="card-body">
+    <% if instruction.errors.any? %>
+      <div class="alert alert-danger">
+        <p class="fw-semibold mb-1">Please fix the following:</p>
+        <ul class="mb-0">
+          <% instruction.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div class="row g-3">
+      <div class="col-12">
+        <%= form.label :title, class: 'form-label' %>
+        <%= form.text_field :title, class: 'form-control', required: true %>
+      </div>
+      <div class="col-12">
+        <%= form.label :description, class: 'form-label' %>
+        <%= form.text_area :description, rows: 3, class: 'form-control', placeholder: 'Instruction description' %>
+      </div>
+      <div class="col-12">
+        <%= form.label :image, 'Screenshot/Image', class: 'form-label' %>
+        <%= form.file_field :image, accept: 'image/*', class: 'form-control', id: 'instruction-image-input' %>
+        <div class="form-text">Upload an image of the page/feature to annotate</div>
+        <% if instruction.image.attached? %>
+          <div class="mt-2">
+            <%= image_tag instruction.image, class: 'img-thumbnail', style: 'max-width: 300px;', id: 'existing-image-preview' %>
+            <div id="image-preview-container" class="position-relative mb-3" style="border: 2px dashed #dee2e6; min-height: 200px; display: none; margin-top: 10px;">
+              <img id="image-preview" src="<%= url_for(instruction.image) %>" alt="Preview" style="max-width: 100%; display: block;">
+              <canvas id="dots-canvas" style="position: absolute; top: 0; left: 0; pointer-events: none;"></canvas>
+            </div>
+          </div>
+        <% end %>
+      </div>
+      <div class="col-12" id="dots-editor-container" style="display: none;">
+        <label class="form-label">Add Pulsing Dots</label>
+        <div class="alert alert-info">
+          <p class="mb-2"><strong>Instructions:</strong></p>
+          <ol class="mb-0">
+            <li>Upload an image above</li>
+            <li>Click on the image preview to add a dot at that location</li>
+            <li>Enter a blurb explaining what that feature does</li>
+            <li>Click "Remove" to delete a dot</li>
+          </ol>
+        </div>
+        <div id="image-preview-container" class="position-relative mb-3" style="border: 2px dashed #dee2e6; min-height: 200px; <%= 'display: block;' if instruction.image.attached? %>">
+          <img id="image-preview" src="<%= instruction.image.attached? ? url_for(instruction.image) : '' %>" alt="Preview" style="max-width: 100%; display: block;">
+          <canvas id="dots-canvas" style="position: absolute; top: 0; left: 0; pointer-events: none;"></canvas>
+        </div>
+        <div id="dots-list" class="mb-3"></div>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="add-dot-btn" style="display: none;">Add Dot</button>
+        <%= form.hidden_field :dots_data, id: 'dots-data-input', value: (instruction.dots_data || []).to_json %>
+      </div>
+    </div>
+  </div>
+  <div class="card-footer bg-white border-0 d-flex justify-content-end gap-2 mb-3">
+    <%= link_to 'Cancel', instruction.persisted? ? project_page_instruction_path(project, page, instruction) : project_page_path(project, page), class: 'btn btn-outline-dark' %>
+    <%= form.submit class: 'btn btn-new-agenda' %>
+  </div>
+<% end %>
+

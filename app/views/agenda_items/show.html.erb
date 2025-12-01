@@ -72,6 +72,24 @@
               <% end %>
             </div>
           </div>
+          <% if @agenda_item.instruction %>
+            <div class="col-md-6">
+              <div class="text-muted small">Instruction</div>
+              <div class="fw-semibold">
+                <button type="button" 
+                        class="btn btn-sm btn-outline-primary" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#instructionModal"
+                        data-instruction-id="<%= @agenda_item.instruction.id %>"
+                        data-instruction-url="<%= project_page_instruction_path(@agenda_item.instruction.page.project, @agenda_item.instruction.page, @agenda_item.instruction, format: :json) %>">
+                  View Instruction
+                </button>
+                <% if @agenda_item.instruction.page && policy(@agenda_item.instruction.page).show? %>
+                  <%= link_to 'Go to Page', project_page_path(@agenda_item.instruction.page.project, @agenda_item.instruction.page), class: 'btn btn-sm btn-outline-secondary ms-2' %>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
           <div class="col-md-6">
             <div class="text-muted small">Requested by</div>
             <div class="fw-semibold"><%= @agenda_item.requested_by.presence || 'Not captured' %></div>
@@ -333,6 +351,25 @@
             <%= form.submit 'Log Time', class: 'btn btn-new-agenda' %>
           </div>
         <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Instruction Modal -->
+<div class="modal fade" id="instructionModal" tabindex="-1" aria-labelledby="instructionModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="instructionModalLabel">Instruction</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="instructionModalBody">
+        <div class="text-center">
+          <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>

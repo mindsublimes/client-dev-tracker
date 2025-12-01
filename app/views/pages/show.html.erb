@@ -1,0 +1,85 @@
+<div class="d-flex justify-content-between align-items-start mb-4">
+  <div>
+    <p class="text-muted mb-1">
+      <%= link_to @page.project.name, project_path(@page.project), class: 'text-decoration-none' %>
+    </p>
+    <h1 class="h3 mb-2"><%= @page.title %></h1>
+    <div class="text-muted small">
+      <%= link_to @page.url, @page.url, target: '_blank', class: 'text-decoration-none' %>
+    </div>
+  </div>
+  <div>
+    <% if policy(@page).update? %>
+      <%= link_to 'Edit Page', edit_project_page_path(@page.project, @page), class: 'btn btn-outline-dark' %>
+    <% end %>
+    <% if policy(Instruction.new(page: @page)).create? %>
+      <%= link_to 'Add Instruction', new_project_page_instruction_path(@page.project, @page), class: 'btn btn-new-agenda' %>
+    <% end %>
+  </div>
+</div>
+
+<% if @page.description.present? %>
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="card-title mb-3">Description</h5>
+      <%= simple_format(@page.description) %>
+    </div>
+  </div>
+<% end %>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="h5 mb-0">Instructions</h4>
+</div>
+
+<% if @instructions.any? %>
+  <div class="row g-3">
+    <% @instructions.each do |instruction| %>
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body d-flex flex-column">
+            <h5 class="card-title mb-2"><%= instruction.title %></h5>
+            <% if instruction.description.present? %>
+              <p class="text-muted small mb-3 flex-grow-1" style="max-height: 60px; overflow: hidden;">
+                <%= truncate(instruction.description, length: 100) %>
+              </p>
+            <% end %>
+            <div class="mt-auto d-flex gap-2">
+              <button type="button" 
+                      class="btn btn-outline-dark btn-sm" 
+                      data-bs-toggle="modal" 
+                      data-bs-target="#instructionModal"
+                      data-instruction-id="<%= instruction.id %>"
+                      data-instruction-url="<%= project_page_instruction_path(@page.project, @page, instruction, format: :json) %>">
+                View Instruction
+              </button>
+              <% if policy(instruction).update? %>
+                <%= link_to 'Edit', edit_project_page_instruction_path(@page.project, @page, instruction), class: 'btn btn-outline-secondary btn-sm' %>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% else %>
+  <div class="alert alert-info">No instructions documented yet for this page.</div>
+<% end %>
+
+<!-- Instruction Modal -->
+<div class="modal fade" id="instructionModal" tabindex="-1" aria-labelledby="instructionModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="instructionModalLabel">Instruction</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="instructionModalBody">
+        <div class="text-center">
+          <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -2,6 +2,7 @@ class Project < ApplicationRecord
   belongs_to :client
   has_many :sprints, dependent: :destroy
   has_many :agenda_items, dependent: :nullify
+  has_many :pages, dependent: :destroy
   has_many :notes, through: :agenda_items, source: :agenda_messages
 
   validates :client, presence: true

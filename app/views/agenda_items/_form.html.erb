@@ -117,6 +117,15 @@
           <%= form.label :notes, class: 'form-label' %>
           <%= form.text_area :notes, rows: 3, class: 'form-control', placeholder: 'Internal notes for team context' %>
         </div>
+        <div class="col-12">
+          <%= form.label :instruction_id, 'Instruction (Optional)', class: 'form-label' %>
+          <%= form.collection_select :instruction_id, 
+                                    @instructions.map { |i| [i.page.project.name + ' - ' + i.page.title + ' - ' + i.title, i.id] },
+                                    :last, :first,
+                                    { include_blank: 'No instruction' },
+                                    class: 'form-select' %>
+          <div class="form-text">Link this agenda item to a page instruction for easy reference</div>
+        </div>
       <% end %>
     </div>
   </div>
