@@ -39,6 +39,11 @@
         <%= form.label :description, class: 'form-label' %>
         <%= form.text_area :description, rows: 4, class: 'form-control', placeholder: 'Project scope, goals, or notes' %>
       </div>
+      <div class="col-md-6">
+        <%= form.label :figma_file_key, 'Default Figma file key', class: 'form-label' %>
+        <%= form.text_field :figma_file_key, class: 'form-control font-monospace', placeholder: 'Optional — for Design → Tasks import' %>
+        <div class="form-text">Used as default when importing tasks from Figma.</div>
+      </div>
     </div>
   </div>
   <div class="card-footer bg-white border-0 d-flex justify-content-end gap-2 mb-3">

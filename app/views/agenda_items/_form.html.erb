@@ -106,11 +106,18 @@
             <%= form.label :paid, 'Cost paid?', class: 'form-check-label' %>
           </div>
         </div>
+        <div class="col-md-4 d-flex align-items-end">
+          <div class="form-check">
+            <%= form.check_box :billing_milestone, class: 'form-check-input' %>
+            <%= form.label :billing_milestone, 'Billing milestone (invoice when completed)', class: 'form-check-label' %>
+          </div>
+        </div>
       <% else %>
         <%= form.hidden_field :requested_by %>
         <%= form.hidden_field :requested_by_email %>
         <%= form.hidden_field :estimated_cost %>
         <%= form.hidden_field :paid %>
+        <%= form.hidden_field :billing_milestone %>
       <% end %>
       <% unless current_user&.client? %>
         <div class="col-12">

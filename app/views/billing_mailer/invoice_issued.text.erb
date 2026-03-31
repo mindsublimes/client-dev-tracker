@@ -1,0 +1,15 @@
+Hello,
+
+We have recorded a completed milestone and issued billing for "<%= @agenda_item.title %>"
+(<%= number_to_currency(@invoice.amount) %> <%= @invoice.currency %>).
+
+<% if @invoice.external_url.present? -%>
+View invoice: <%= @invoice.external_url %>
+<% elsif @invoice.external_id.present? && @invoice.provider_quickbooks? -%>
+QuickBooks invoice ID: <%= @invoice.external_id %>
+<% end -%>
+
+If you have questions, reply to this email.
+
+Thank you,
+<%= ENV.fetch("AGENCY_BILLING_SIGNATURE", "Your delivery team") %>

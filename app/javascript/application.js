@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupDateRangePicker()
   setupBulkAgendaForm()
   setupClientRoleField()
+  setupCopyDesignPrompt()
   setupInstructionForm()
   setupInstructionModal()
 })
@@ -675,6 +676,8 @@ document.addEventListener('turbo:load', setupBulkAgendaForm)
 document.addEventListener('turbo:render', setupBulkAgendaForm)
 document.addEventListener('turbo:load', setupClientRoleField)
 document.addEventListener('turbo:render', setupClientRoleField)
+document.addEventListener('turbo:load', setupCopyDesignPrompt)
+document.addEventListener('turbo:render', setupCopyDesignPrompt)
 
 function setupClientRoleField() {
   const roleSelect = document.querySelector('[data-behavior="user-role-select"]')
@@ -695,6 +698,45 @@ function setupClientRoleField() {
   
   // Update on change
   roleSelect.addEventListener('change', toggleClientRoleField)
+}
+
+function setupCopyDesignPrompt() {
+  document.querySelectorAll('[data-copy-target]').forEach(btn => {
+    if (btn._copyWired) return
+    btn._copyWired = true
+    btn.addEventListener('click', () => {
+      const sel = btn.getAttribute('data-copy-target')
+      const el = sel ? document.querySelector(sel) : null
+      if (!el) return
+      const text = el.textContent.trim()
+      if (!text) return
+      const showCopied = () => {
+        const orig = btn.textContent
+        btn.textContent = 'Copied!'
+        setTimeout(() => { btn.textContent = orig }, 1500)
+      }
+
+      const fallbackCopy = () => {
+        const ta = document.createElement('textarea')
+        ta.value = text
+        ta.setAttribute('readonly', '')
+        ta.style.position = 'fixed'
+        ta.style.opacity = '0'
+        document.body.appendChild(ta)
+        ta.focus()
+        ta.select()
+        const ok = document.execCommand('copy')
+        document.body.removeChild(ta)
+        if (ok) showCopied()
+      }
+
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(showCopied).catch(fallbackCopy)
+      } else {
+        fallbackCopy()
+      }
+    })
+  })
 }
 
 function setupBrowserNotifications() {

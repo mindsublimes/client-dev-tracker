@@ -1,0 +1,52 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h3 mb-0">Client Status Delivery Log</h1>
+    <p class="text-muted mb-0">Recent webhook deliveries for client progress updates.</p>
+  </div>
+  <%= link_to 'Back to Reports', reports_path, class: 'btn btn-sm btn-outline-secondary' %>
+</div>
+
+<div class="card border-0 shadow-sm">
+  <div class="card-body">
+    <% if @client_status_deliveries.any? %>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>Sent</th>
+              <th>Client</th>
+              <th>Status</th>
+              <th>Items</th>
+              <th>Summary</th>
+              <th>Response</th>
+              <th>Error</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @client_status_deliveries.each do |delivery| %>
+              <tr>
+                <td><%= delivery.sent_at&.strftime('%b %d, %Y %H:%M') || '—' %></td>
+                <td><%= delivery.client&.name || "Client ##{delivery.client_id}" %></td>
+                <td>
+                  <span class="badge <%= delivery.delivery_sent? ? 'bg-success' : 'bg-danger' %>">
+                    <%= delivery.status %>
+                  </span>
+                </td>
+                <td><%= delivery.completed_items_count %></td>
+                <td class="small text-muted" style="max-width: 420px;">
+                  <%= truncate(delivery.summary.to_s, length: 180) %>
+                </td>
+                <td><%= delivery.webhook_response_code || '—' %></td>
+                <td class="small text-danger" style="max-width: 320px;">
+                  <%= truncate(delivery.error_message.to_s, length: 140) %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <div class="text-muted">No client status deliveries have been recorded yet.</div>
+    <% end %>
+  </div>
+</div>

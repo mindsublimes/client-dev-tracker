@@ -1,7 +1,7 @@
 class ActivityLogger
   TRACKED_ATTRIBUTES = %w[
     title description status work_stream priority_level complexity due_on started_on completed_at
-    assignee_id requested_by requested_by_email estimated_cost paid notes client_id
+    assignee_id requested_by requested_by_email estimated_cost paid billing_milestone notes client_id
   ].freeze
 
   class << self

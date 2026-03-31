@@ -25,6 +25,14 @@ class ProjectPolicy < ApplicationPolicy
     update?
   end
 
+  def refine_design_prompt?
+    update?
+  end
+
+  def figma_import?
+    update?
+  end
+
   class Scope < Scope
     def resolve
       return scope.none unless user
