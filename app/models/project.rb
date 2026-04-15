@@ -4,6 +4,9 @@ class Project < ApplicationRecord
   has_many :agenda_items, dependent: :nullify
   has_many :pages, dependent: :destroy
   has_many :notes, through: :agenda_items, source: :agenda_messages
+  has_many :documentation_pages, dependent: :destroy
+
+  has_many_attached :wireframe_files
 
   validates :client, presence: true
   validates :name, presence: true, length: { maximum: 120 }

@@ -25,6 +25,10 @@ class SprintPolicy < ApplicationPolicy
     update?
   end
 
+  def manage_agent_milestones?
+    manager_access?
+  end
+
   class Scope < Scope
     def resolve
       return scope.none unless user

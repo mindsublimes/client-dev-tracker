@@ -12,12 +12,50 @@
       <%= @sprint.start_date&.strftime('%B %d, %Y') || 'Start TBD' %> -
       <%= @sprint.end_date&.strftime('%B %d, %Y') || 'End TBD' %>
     </div>
+    <div class="mt-2 d-flex flex-wrap gap-2">
+      <% if @sprint.development_payment_received_at.present? %>
+        <span class="badge bg-success">Dev payment recorded</span>
+      <% end %>
+      <% if @sprint.completed? %>
+        <span class="badge bg-primary">Sprint completed</span>
+      <% end %>
+      <% if @sprint.under_client_review? %>
+        <span class="badge bg-warning text-dark">Under client review</span>
+      <% end %>
+    </div>
   </div>
   <div class="text-end">
     <div class="text-muted small">Sprint cost</div>
     <div class="h4 mb-0"><%= @sprint.cost.present? ? number_to_currency(@sprint.cost) : 'Not estimated' %></div>
   </div>
 </div>
+
+<% if policy(@sprint).manage_agent_milestones? %>
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <h5 class="mb-0">Sprint agents (v1)</h5>
+    </div>
+    <div class="card-body">
+      <div class="d-flex flex-wrap gap-2 mb-3">
+        <%= button_to 'Mark development payment received', mark_development_payment_received_sprint_path(@sprint), method: :post, class: 'btn btn-outline-success btn-sm', data: { turbo: false }, disabled: @sprint.completed? %>
+        <%= button_to (@sprint.under_client_review? ? 'Clear client review flag' : 'Mark under client review'), toggle_under_client_review_sprint_path(@sprint), method: :post, class: 'btn btn-outline-warning btn-sm', data: { turbo: false } %>
+        <%= button_to 'Run dev review agent #5 (executive summary)', run_executive_review_agent_sprint_path(@sprint), method: :post, class: 'btn btn-outline-dark btn-sm', data: { turbo: false } %>
+      </div>
+      <p class="text-muted small mb-0">Agent #5 uses OpenAI and requires the sprint to be <strong>under client review</strong>. It compares agenda items to wireframe+dev spec and auto-adds missing/changed/enhancement entries as completed agenda items.</p>
+    </div>
+  </div>
+<% end %>
+
+<% if @sprint.ai_executive_review.present? %>
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <h5 class="mb-0">AI executive review (agent #5)</h5>
+    </div>
+    <div class="card-body small">
+      <%= simple_format(@sprint.ai_executive_review) %>
+    </div>
+  </div>
+<% end %>
 
 <div class="row g-3 mb-4">
   <div class="col-md-3">

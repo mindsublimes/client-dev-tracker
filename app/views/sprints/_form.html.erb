@@ -39,6 +39,14 @@
         <%= form.label :goal, class: 'form-label' %>
         <%= form.text_area :goal, rows: 4, class: 'form-control', placeholder: 'Sprint objective or deliverables' %>
       </div>
+      <% if policy(@sprint).manage_agent_milestones? %>
+        <div class="col-12">
+          <div class="form-check">
+            <%= form.check_box :under_client_review, class: 'form-check-input' %>
+            <%= form.label :under_client_review, 'Sprint under client review (enables dev review agent #5)', class: 'form-check-label' %>
+          </div>
+        </div>
+      <% end %>
     </div>
   </div>
   <div class="card-footer bg-white border-0 d-flex justify-content-end gap-2 mb-3">

@@ -21,12 +21,24 @@ Rails.application.routes.draw do
       get :figma_import
       post :figma_import_preview
       post :figma_import_create
+      post :mark_design_payment_received
+      post :run_designer_agent_wireframe
+      post :run_developer_agent_from_spec
+      post :run_designer_agent_figma_sync
+      post :generate_documentation_agent
     end
+    resources :documentation_pages, only: %i[index show], controller: "documentation_pages"
     resources :pages, except: :destroy do
       resources :instructions, except: :destroy
     end
   end
-  resources :sprints, except: :destroy
+  resources :sprints, except: :destroy do
+    member do
+      post :mark_development_payment_received
+      post :toggle_under_client_review
+      post :run_executive_review_agent
+    end
+  end
 
   namespace :admin do
     resources :users, except: %i[show destroy]

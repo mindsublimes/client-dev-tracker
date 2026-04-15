@@ -48,6 +48,8 @@ class AgendaItem < ApplicationRecord
   validates :estimated_cost, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
   validates :sprint, presence: true
 
+  before_validation :normalize_agent_fields
+
   before_validation :sanitize_complexity
   before_validation :sync_hierarchy
   validate :hierarchy_consistency
@@ -107,6 +109,11 @@ class AgendaItem < ApplicationRecord
   end
 
   private
+
+  def normalize_agent_fields
+    self.checklist = [] if checklist.nil?
+    self.checklist = Array(checklist).map(&:to_s).map(&:strip).reject(&:blank?)
+  end
 
   def sanitize_complexity
     self.complexity ||= 3

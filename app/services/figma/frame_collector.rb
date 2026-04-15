@@ -35,6 +35,7 @@ module Figma
                  end
 
           out << {
+            id: node["id"].to_s.presence,
             name: name,
             type: type,
             path: segments.join(" › "),

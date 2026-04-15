@@ -2,6 +2,9 @@ class ProjectsController < ApplicationController
   before_action :set_project, only: %i[
     show edit update refine_design_prompt
     figma_import figma_import_preview figma_import_create
+    mark_design_payment_received
+    run_designer_agent_wireframe run_developer_agent_from_spec
+    run_designer_agent_figma_sync generate_documentation_agent
   ]
   before_action :set_form_collections, only: %i[new create edit update]
 
@@ -189,6 +192,68 @@ class ProjectsController < ApplicationController
     redirect_to project_path(@project), success: "Created #{created} agenda item(s) from Figma."
   end
 
+  def mark_design_payment_received
+    authorize @project, :update?
+
+    @project.update!(design_payment_received_at: Time.current)
+    redirect_to project_path(@project), success: "Design payment recorded. You can run designer agent #1 when ready."
+  end
+
+  def run_designer_agent_wireframe
+    authorize @project, :update?
+
+    sprint = @project.sprints.find_by(id: params[:sprint_id])
+    unless sprint
+      redirect_to project_path(@project), alert: "Choose a sprint for generated tasks."
+      return
+    end
+
+    result = Agents::WireframeDesignerTaskPlanner.call(project: @project, sprint: sprint, acting_user: current_user)
+    redirect_to project_path(@project), success: "Designer agent created #{result[:created_count]} agenda item(s)."
+  rescue Agents::WireframeDesignerTaskPlanner::Error, Agents::OpenAiChat::Error => e
+    redirect_to project_path(@project), alert: e.message
+  end
+
+  def run_developer_agent_from_spec
+    authorize @project, :update?
+
+    sprint = @project.sprints.find_by(id: params[:sprint_id])
+    unless sprint
+      redirect_to project_path(@project), alert: "Choose a sprint for generated tasks."
+      return
+    end
+
+    skip_pay = ActiveModel::Type::Boolean.new.cast(params[:skip_sprint_payment])
+    result = Agents::MarkdownDeveloperTaskPlanner.call(
+      project: @project,
+      sprint: sprint,
+      acting_user: current_user,
+      require_sprint_payment: !skip_pay
+    )
+    redirect_to project_path(@project), success: "Developer agent created #{result[:created_count]} agenda item(s)."
+  rescue Agents::MarkdownDeveloperTaskPlanner::Error, Agents::OpenAiChat::Error => e
+    redirect_to project_path(@project), alert: e.message
+  end
+
+  def run_designer_agent_figma_sync
+    authorize @project, :update?
+
+    result = Agents::FigmaAgendaSync.call(project: @project, user: current_user)
+    redirect_to project_path(@project), success: "Figma sync updated #{result[:updated_count]} agenda item(s)."
+  rescue Agents::FigmaAgendaSync::Error, Figma::FileFetcher::MissingToken, Figma::FileFetcher::Unauthorized,
+         Figma::FileFetcher::NotFound, Figma::FileFetcher::Error => e
+    redirect_to project_path(@project), alert: e.message
+  end
+
+  def generate_documentation_agent
+    authorize @project, :update?
+
+    meta = Agents::DocumentationGenerator.call(project: @project)
+    redirect_to project_documentation_page_path(@project, meta[:slug]), success: "Documentation refreshed."
+  rescue Agents::DocumentationGenerator::Error, Agents::OpenAiChat::Error => e
+    redirect_to project_path(@project), alert: e.message
+  end
+
   private
 
   def set_project
@@ -202,7 +267,9 @@ class ProjectsController < ApplicationController
   def project_params
     params.require(:project).permit(
       :client_id, :name, :description, :estimated_cost, :start_date, :end_date,
-      :design_brief, :design_prompt, :generated_design_url, :figma_file_key
+      :design_brief, :design_prompt, :generated_design_url, :figma_file_key,
+      :wireframe_outline, :dev_task_spec_markdown,
+      wireframe_files: []
     )
   end
 

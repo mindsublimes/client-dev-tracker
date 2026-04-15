@@ -1,0 +1,20 @@
+Dev tracker — daily progress (<%= Date.current %>)
+Since <%= @since&.strftime("%Y-%m-%d %H:%M %Z") %>
+
+<% if @rows.blank? && @message_rows.blank? %>
+No matching activity in this window.
+<% else %>
+<% if @rows.any? %>
+Status & field updates:
+<% @rows.each do |r| %>
+- <%= r[:at]&.strftime("%b %d %H:%M") %> | <%= r[:client] %> | <%= r[:project] %> | <%= r[:item] %> | <%= r[:actor] %> | <%= r[:detail] %>
+<% end %>
+<% end %>
+<% if @message_rows.any? %>
+
+Notes & comments:
+<% @message_rows.each do |r| %>
+- <%= r[:at]&.strftime("%b %d %H:%M") %> | <%= r[:client] %> | <%= r[:project] %> | <%= r[:item] %> | <%= r[:actor] %> | <%= r[:detail] %>
+<% end %>
+<% end %>
+<% end %>
