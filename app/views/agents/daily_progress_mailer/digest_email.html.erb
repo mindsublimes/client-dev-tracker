@@ -1,0 +1,61 @@
+<p>Summary of agenda activity since <strong><%= @since&.strftime("%Y-%m-%d %H:%M %Z") %></strong>.</p>
+
+<% if @rows.blank? && @message_rows.blank? %>
+  <p><em>No matching activity in this window.</em></p>
+<% else %>
+  <% if @rows.any? %>
+    <h2>Status & field updates</h2>
+    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 100%; font-size: 13px;">
+      <thead>
+        <tr>
+          <th>When</th>
+          <th>Client</th>
+          <th>Project</th>
+          <th>Task</th>
+          <th>Who</th>
+          <th>What</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @rows.each do |r| %>
+          <tr>
+            <td><%= r[:at]&.strftime("%b %d %H:%M") %></td>
+            <td><%= r[:client] %></td>
+            <td><%= r[:project] %></td>
+            <td><%= r[:item] %></td>
+            <td><%= r[:actor] %></td>
+            <td><%= r[:detail] %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+
+  <% if @message_rows.any? %>
+    <h2>Notes & comments</h2>
+    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 100%; font-size: 13px;">
+      <thead>
+        <tr>
+          <th>When</th>
+          <th>Client</th>
+          <th>Project</th>
+          <th>Task</th>
+          <th>Who</th>
+          <th>Note</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @message_rows.each do |r| %>
+          <tr>
+            <td><%= r[:at]&.strftime("%b %d %H:%M") %></td>
+            <td><%= r[:client] %></td>
+            <td><%= r[:project] %></td>
+            <td><%= r[:item] %></td>
+            <td><%= r[:actor] %></td>
+            <td><%= simple_format(h(r[:detail])) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+<% end %>

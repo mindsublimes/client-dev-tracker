@@ -39,6 +39,26 @@
         <%= form.label :description, class: 'form-label' %>
         <%= form.text_area :description, rows: 4, class: 'form-control', placeholder: 'Project scope, goals, or notes' %>
       </div>
+      <div class="col-md-6">
+        <%= form.label :figma_file_key, 'Default Figma file key', class: 'form-label' %>
+        <%= form.text_field :figma_file_key, class: 'form-control font-monospace', placeholder: 'Optional — for Design → Tasks import' %>
+        <div class="form-text">Used as default when importing tasks from Figma and for designer agent #2 (sync).</div>
+      </div>
+      <div class="col-12">
+        <%= form.label :wireframe_outline, 'Wireframe outline (markdown)', class: 'form-label' %>
+        <%= form.text_area :wireframe_outline, rows: 6, class: 'form-control font-monospace', placeholder: 'Paste the detailed wireframe narrative: modules, screens, features…' %>
+        <div class="form-text">Used by designer agent #1 after design payment is recorded.</div>
+      </div>
+      <div class="col-12">
+        <%= form.label :dev_task_spec_markdown, 'Development task spec (markdown)', class: 'form-label' %>
+        <%= form.text_area :dev_task_spec_markdown, rows: 6, class: 'form-control font-monospace', placeholder: 'Per-module / screen / feature breakdown for developers…' %>
+        <div class="form-text">Used by developer agent #3 after sprint development payment is recorded.</div>
+      </div>
+      <div class="col-12">
+        <%= form.label :wireframe_files, 'Wireframe attachments (.txt / .md)', class: 'form-label' %>
+        <%= form.file_field :wireframe_files, multiple: true, class: 'form-control', accept: 'text/plain,.md,text/markdown' %>
+        <div class="form-text">Optional. Image/PDF wireframes are not parsed in v1 — paste text or attach markdown.</div>
+      </div>
     </div>
   </div>
   <div class="card-footer bg-white border-0 d-flex justify-content-end gap-2 mb-3">

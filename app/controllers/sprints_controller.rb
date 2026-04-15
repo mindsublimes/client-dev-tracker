@@ -1,5 +1,8 @@
 class SprintsController < ApplicationController
-  before_action :set_sprint, only: %i[show edit update]
+  before_action :set_sprint, only: %i[
+    show edit update
+    mark_development_payment_received toggle_under_client_review run_executive_review_agent
+  ]
   before_action :set_projects, only: %i[new create edit update]
 
   def index
@@ -67,6 +70,34 @@ class SprintsController < ApplicationController
     end
   end
 
+  def mark_development_payment_received
+    authorize @sprint, :manage_agent_milestones?
+
+    @sprint.update!(
+      development_payment_received_at: Time.current,
+      completed_at: Time.current,
+      under_client_review: false,
+      end_date: (@sprint.end_date || Date.current)
+    )
+    redirect_to sprint_path(@sprint), success: "Development payment recorded and sprint marked completed."
+  end
+
+  def toggle_under_client_review
+    authorize @sprint, :manage_agent_milestones?
+
+    @sprint.update!(under_client_review: !@sprint.under_client_review)
+    redirect_to sprint_path(@sprint), success: @sprint.under_client_review ? "Sprint marked under client review." : "Sprint taken out of client review."
+  end
+
+  def run_executive_review_agent
+    authorize @sprint, :manage_agent_milestones?
+
+    Agents::SprintExecutiveReview.call(sprint: @sprint)
+    redirect_to sprint_path(@sprint), success: "Executive review generated. See the AI review section below."
+  rescue Agents::SprintExecutiveReview::Error, Agents::OpenAiChat::Error => e
+    redirect_to sprint_path(@sprint), alert: e.message
+  end
+
   private
 
   def set_sprint
@@ -78,7 +109,7 @@ class SprintsController < ApplicationController
   end
 
   def sprint_params
-    params.require(:sprint).permit(:project_id, :name, :goal, :start_date, :end_date, :cost)
+    params.require(:sprint).permit(:project_id, :name, :goal, :start_date, :end_date, :cost, :under_client_review)
   end
 
   def sprint_filter_params

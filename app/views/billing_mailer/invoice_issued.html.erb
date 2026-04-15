@@ -1,0 +1,18 @@
+<p>Hello,</p>
+
+<p>
+  We have recorded a completed milestone and issued billing for <strong><%= @agenda_item.title %></strong>
+  (<%= number_to_currency(@invoice.amount) %> <%= @invoice.currency %>).
+</p>
+
+<% if @invoice.external_url.present? %>
+  <p><%= link_to "View invoice", @invoice.external_url %></p>
+<% elsif @invoice.external_id.present? && @invoice.provider_quickbooks? %>
+  <p>Reference: QuickBooks invoice ID <%= @invoice.external_id %>.</p>
+<% end %>
+
+<p>
+  If you have questions or need a different billing contact, reply to this email and we will help.
+</p>
+
+<p>Thank you,<br><%= ENV.fetch("AGENCY_BILLING_SIGNATURE", "Your delivery team") %></p>

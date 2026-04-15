@@ -22,6 +22,10 @@ class Sprint < ApplicationRecord
     parts.compact.join(' • ')
   end
 
+  def completed?
+    completed_at.present?
+  end
+
   private
 
   def date_window

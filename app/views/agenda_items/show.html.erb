@@ -107,6 +107,43 @@
               <% end %>
             </div>
           <% end %>
+          <% if @agenda_item.figma_screen_url.present? %>
+            <div class="col-md-6">
+              <div class="text-muted small">Figma screen</div>
+              <div><%= link_to 'Open in Figma', @agenda_item.figma_screen_url, target: '_blank', rel: 'noopener', class: 'text-decoration-none' %></div>
+            </div>
+          <% end %>
+          <% if @agenda_item.agent_source.present? %>
+            <div class="col-md-6">
+              <div class="text-muted small">Agent source</div>
+              <div class="fw-semibold text-break"><%= @agenda_item.agent_source %></div>
+            </div>
+          <% end %>
+          <% if @agenda_item.checklist.present? %>
+            <div class="col-12">
+              <div class="text-muted small mb-1">Designer / dev checklist</div>
+              <ul class="mb-0 small">
+                <% @agenda_item.checklist.each do |line| %>
+                  <li><%= line %></li>
+                <% end %>
+              </ul>
+            </div>
+          <% end %>
+          <% if current_user&.internal_role? %>
+            <div class="col-md-6">
+              <div class="text-muted small">Billing milestone</div>
+              <div class="fw-semibold"><%= @agenda_item.billing_milestone? ? 'Yes — invoice on completion' : 'No' %></div>
+            </div>
+            <% if @agenda_item.invoice.present? %>
+              <div class="col-md-6">
+                <div class="text-muted small">Invoice</div>
+                <div>
+                  <%= link_to "View invoice ##{@agenda_item.invoice.id}", invoice_path(@agenda_item.invoice), class: 'text-decoration-none' %>
+                  <span class="badge bg-<%= @agenda_item.invoice.invoice_paid? ? 'success' : 'warning' %> ms-1"><%= @agenda_item.invoice.status %></span>
+                </div>
+              </div>
+            <% end %>
+          <% end %>
           <% unless current_user&.client? %>
             <div class="col-md-6">
               <div class="text-muted small">Notes</div>

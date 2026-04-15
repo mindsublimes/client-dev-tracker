@@ -1,0 +1,21 @@
+Hello,
+
+Follow-up on an open invoice for <%= @client&.name %>:
+"<%= @agenda_item.title %>" — <%= number_to_currency(@invoice.amount) %> <%= @invoice.currency %>
+Issued <%= @invoice.issued_at&.strftime("%B %d, %Y") %>.
+
+<% if @invoice.external_url.present? -%>
+Invoice link: <%= @invoice.external_url %>
+<% end -%>
+
+<% case @reminder_day %>
+<% when 7 %>
+If payment is already on the way, please disregard this message.
+<% when 14 %>
+Reply if you need a revised invoice or different payment instructions.
+<% when 30 %>
+Please let us know if anything is blocking payment so we can help.
+<% end %>
+
+Thank you,
+<%= ENV.fetch("AGENCY_BILLING_SIGNATURE", "Your delivery team") %>

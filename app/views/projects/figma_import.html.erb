@@ -1,0 +1,134 @@
+<div class="mb-4">
+  <%= link_to '← Back to project', project_path(@project), class: 'text-decoration-none small' %>
+  <h1 class="h3 mt-2 mb-1">Design → Tasks (Figma)</h1>
+  <p class="text-muted mb-0">
+    Pull frames and components from a Figma file via the REST API, then generate implementation line items (OpenAI or Claude) and create agenda items on this project.
+    You can edit these line items before creating them, or copy them into Linear/Jira/GitHub if your team tracks work there.
+  </p>
+</div>
+
+<div class="alert alert-warning small mb-3">
+  <strong>Security:</strong> Never commit Figma client secrets to git. Put them only in your host’s environment (e.g. Heroku config vars). If a secret was ever pasted in chat or email, <strong>rotate the client secret</strong> in
+  <a href="https://www.figma.com/developers/apps" target="_blank" rel="noopener">Figma → My Apps</a>.
+</div>
+
+<div class="alert alert-light border small mb-4">
+  <strong>Setup:</strong>
+  <ul class="mb-0">
+    <li>
+      <strong>Recommended — OAuth:</strong> In your Figma OAuth app, add redirect URL <code class="user-select-all"><%= figma_oauth_callback_url %></code>
+      (must match exactly). Set <code>FIGMA_CLIENT_ID</code>, <code>FIGMA_CLIENT_SECRET</code>, and <code>FIGMA_OAUTH_REDIRECT_URI</code> to that same callback URL. Enable scope <code>file_content:read</code>, then use <strong>Connect Figma</strong> below.
+    </li>
+    <li>
+      <strong>Alternative:</strong> A <a href="https://www.figma.com/developers/api#access-tokens" target="_blank" rel="noopener">personal access token</a> via <code>FIGMA_ACCESS_TOKEN</code> (server-wide, not per user).
+    </li>
+    <li>For AI-written tickets: <code>OPENAI_API_KEY</code> (or <code>ANTHROPIC_API_KEY</code> / <code>FIGMA_TASKS_LLM=anthropic</code>). Without an LLM, one generic task is created per frame/component.</li>
+  </ul>
+</div>
+
+<% if current_user.internal_role? %>
+  <div class="d-flex flex-wrap gap-2 align-items-center mb-4">
+    <% if Figma::Oauth.configured? %>
+      <% if current_user.figma_oauth_connected? %>
+        <span class="badge bg-success">Figma connected</span>
+        <%= button_to "Disconnect Figma", figma_oauth_disconnect_path, method: :delete, class: "btn btn-outline-secondary btn-sm", form: { data: { turbo: false } } %>
+      <% else %>
+        <%= link_to "Connect Figma account", figma_oauth_connect_path(return_to: figma_import_project_path(@project)), class: "btn btn-primary btn-sm" %>
+        <span class="text-muted small">Uses your Figma access to files you can open.</span>
+      <% end %>
+    <% else %>
+      <span class="text-muted small">OAuth not configured — use <code>FIGMA_ACCESS_TOKEN</code> or set client ID, secret, and redirect URI.</span>
+    <% end %>
+  </div>
+<% end %>
+
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-white">
+    <h5 class="mb-0">1. Load from Figma</h5>
+  </div>
+  <div class="card-body">
+    <%= form_with url: figma_import_preview_project_path(@project), method: :post, local: true do %>
+      <div class="mb-3">
+        <label class="form-label">Figma file or design URL</label>
+        <%= text_field_tag :figma_url,
+            (@preview_file_key.present? ? "https://www.figma.com/design/#{@preview_file_key}/" : nil),
+            class: 'form-control',
+            placeholder: 'https://www.figma.com/design/… or https://www.figma.com/make/…' %>
+        <div class="form-text">Design, prototype, or <strong>Make</strong> URLs are supported. Or paste the file key only. Saved default: <code><%= @project.figma_file_key.presence || 'none' %></code></div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">File key override (optional)</label>
+        <%= text_field_tag :figma_file_key, nil, class: 'form-control font-monospace', placeholder: 'AbCdEf123456' %>
+      </div>
+      <div class="form-check mb-3">
+        <%= check_box_tag :save_default_file_key, '1', false, class: 'form-check-input' %>
+        <%= label_tag :save_default_file_key, 'Save this file key as the default for this project', class: 'form-check-label' %>
+      </div>
+      <%= submit_tag 'Scan file & generate tasks', class: 'btn btn-primary', data: { turbo: false } %>
+    <% end %>
+  </div>
+</div>
+
+<% if @suggested_tasks.present? %>
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">2. Review & create agenda items</h5>
+      <% if @frames_sample_count.present? %>
+        <span class="badge bg-secondary"><%= @frames_sample_count %> Figma nodes scanned</span>
+      <% end %>
+    </div>
+    <div class="card-body">
+      <% if @sprints.none? %>
+        <div class="alert alert-warning mb-0">Add a sprint to this project before you can create agenda items from these tasks.</div>
+      <% else %>
+      <%= form_with url: figma_import_create_project_path(@project), method: :post, local: true do %>
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Sprint</label>
+            <%= select_tag 'figma_import[sprint_id]',
+                options_from_collection_for_select(@sprints, :id, :detailed_label, @sprints.first&.id),
+                class: 'form-select',
+                required: true %>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Assignee (optional)</label>
+            <%= select_tag 'figma_import[assignee_id]',
+                options_for_select([['—', '']] + @assignees.map { |u| [u.full_name, u.id] }, current_user.id),
+                class: 'form-select' %>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead>
+              <tr>
+                <th style="width: 3rem;"></th>
+                <th>Title</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @suggested_tasks.each_with_index do |task, i| %>
+                <tr>
+                  <td>
+                    <%= hidden_field_tag "figma_import[tasks][#{i}][include]", '0' %>
+                    <%= check_box_tag "figma_import[tasks][#{i}][include]", '1', true, class: 'form-check-input mt-0' %>
+                  </td>
+                  <td>
+                    <%= text_field_tag "figma_import[tasks][#{i}][title]", task[:title], class: 'form-control form-control-sm' %>
+                  </td>
+                  <td>
+                    <%= text_area_tag "figma_import[tasks][#{i}][description]", task[:description], class: 'form-control form-control-sm', rows: 2 %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+
+        <%= submit_tag 'Create selected as agenda items', class: 'btn btn-success', data: { turbo: false } %>
+      <% end %>
+      <% end %>
+    </div>
+  </div>
+<% end %>

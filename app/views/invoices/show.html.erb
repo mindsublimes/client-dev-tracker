@@ -1,0 +1,56 @@
+<div class="d-flex justify-content-between align-items-start mb-4">
+  <div>
+    <p class="text-muted mb-1"><%= link_to 'Invoices', invoices_path, class: 'text-decoration-none small' %></p>
+    <h1 class="h3 mb-0">Invoice #<%= @invoice.id %></h1>
+    <p class="text-muted mb-0"><%= @invoice.client&.name %> · Issued <%= @invoice.issued_at&.strftime('%B %d, %Y') %></p>
+  </div>
+  <div class="d-flex gap-2">
+    <% if @invoice.invoice_open? && policy(@invoice).mark_paid? %>
+      <%= button_to 'Mark paid', mark_paid_invoice_path(@invoice), method: :patch, class: 'btn btn-success btn-sm', data: { turbo: false } %>
+    <% end %>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white"><h5 class="mb-0">Summary</h5></div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-4">Amount</dt>
+          <dd class="col-sm-8"><%= number_to_currency(@invoice.amount) %> <%= @invoice.currency %></dd>
+          <dt class="col-sm-4">Status</dt>
+          <dd class="col-sm-8"><span class="badge bg-<%= @invoice.invoice_paid? ? 'success' : @invoice.invoice_void? ? 'secondary' : 'warning' %>"><%= @invoice.status %></span></dd>
+          <dt class="col-sm-4">Milestone</dt>
+          <dd class="col-sm-8"><%= link_to @invoice.agenda_item.title, agenda_item_path(@invoice.agenda_item), class: 'text-decoration-none' %></dd>
+          <dt class="col-sm-4">Reminders</dt>
+          <dd class="col-sm-8">Stage <%= @invoice.reminder_stage %> / 3<% if @invoice.last_reminder_sent_at %> · last <%= @invoice.last_reminder_sent_at.strftime('%b %d, %Y') %><% end %></dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white"><h5 class="mb-0">Accounting sync</h5></div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-4">Provider</dt>
+          <dd class="col-sm-8"><%= @invoice.external_provider %></dd>
+          <dt class="col-sm-4">External ID</dt>
+          <dd class="col-sm-8"><%= @invoice.external_id.presence || '—' %></dd>
+          <dt class="col-sm-4">Link</dt>
+          <dd class="col-sm-8">
+            <% if @invoice.external_url.present? %>
+              <%= link_to @invoice.external_url, @invoice.external_url, target: '_blank', rel: 'noopener', class: 'text-break' %>
+            <% else %>
+              —
+            <% end %>
+          </dd>
+        </dl>
+        <% if @invoice.sync_error.present? %>
+          <div class="alert alert-danger small mt-3 mb-0"><%= @invoice.sync_error %></div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

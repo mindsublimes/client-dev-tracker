@@ -19,6 +19,7 @@ class AgendaItem < ApplicationRecord
   has_many :activity_logs, dependent: :destroy
   has_many :time_entries, dependent: :destroy
   has_many :notifications, dependent: :destroy
+  has_one :invoice, dependent: :restrict_with_error
 
   def active_timer_for(user)
     time_entries.where(user: user).active_timers.first
@@ -47,16 +48,21 @@ class AgendaItem < ApplicationRecord
   validates :estimated_cost, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
   validates :sprint, presence: true
 
+  before_validation :normalize_agent_fields
+
   before_validation :sanitize_complexity
   before_validation :sync_hierarchy
   validate :hierarchy_consistency
   before_save :apply_rank_score
   after_save :notify_status_change, if: :saved_change_to_status?
   after_save :notify_assignment, if: :saved_change_to_assignee_id?
+  after_commit :enqueue_milestone_invoice, on: :update
+  after_commit :sync_invoice_paid_from_agenda, on: :update
 
   scope :ranked, -> { order(rank_score: :desc, due_on: :asc) }
   scope :pending, -> { where.not(status: %i[completed archived cancelled]) }
   scope :due_within, ->(timeframe) { where(due_on: Date.current..(Date.current + timeframe)) }
+  scope :completed_unreported, -> { where(status: :completed, client_liaison_reported_at: nil) }
 
   def pending?
     !completed? && !archived?
@@ -104,6 +110,11 @@ class AgendaItem < ApplicationRecord
 
   private
 
+  def normalize_agent_fields
+    self.checklist = [] if checklist.nil?
+    self.checklist = Array(checklist).map(&:to_s).map(&:strip).reject(&:blank?)
+  end
+
   def sanitize_complexity
     self.complexity ||= 3
   end
@@ -144,5 +155,25 @@ class AgendaItem < ApplicationRecord
     return unless assignee.present?
 
     NotificationCreator.notify_assignment(self, assignee)
+  end
+
+  def enqueue_milestone_invoice
+    return unless saved_change_to_status?
+    return unless completed?
+    return unless billing_milestone?
+    return if estimated_cost.blank? || estimated_cost.to_f <= 0
+    return if invoice.present?
+
+    IssueInvoiceFromMilestoneJob.perform_later(id)
+  end
+
+  def sync_invoice_paid_from_agenda
+    return unless saved_change_to_paid?
+    return unless paid?
+
+    inv = invoice
+    return unless inv&.invoice_open?
+
+    inv.update_columns(status: Invoice.statuses[:paid], paid_at: Time.current) # rubocop:disable Rails/SkipsModelValidations
   end
 end

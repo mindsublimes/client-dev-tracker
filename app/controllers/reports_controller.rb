@@ -51,5 +51,41 @@ class ReportsController < ApplicationController
                                .where('completed_at >= ?', 7.days.ago)
                                .order(completed_at: :desc)
                                .limit(10)
+
+    @pending_client_updates_count =
+      if current_user&.internal_role?
+        AgendaItem.completed_unreported.where("completed_at >= ?", 1.day.ago).count
+      else
+        0
+      end
+  end
+
+  def send_client_status_updates
+    authorize ActivityLog, :index?
+    unless current_user&.internal_role?
+      redirect_to reports_path, alert: "Only internal users can send client status updates."
+      return
+    end
+
+    delivered = ClientLiaison::StatusReporter.deliver_all_pending!(since: 1.day.ago)
+    if delivered.positive?
+      redirect_to reports_path, success: "Client status updates sent for #{delivered} completed item(s)."
+    else
+      redirect_to reports_path, notice: "No new completed items to include in client updates."
+    end
+  rescue ClientLiaison::StatusReporter::ConfigError => e
+    redirect_to reports_path, alert: e.message
+  rescue ClientLiaison::StatusReporter::DeliveryError => e
+    redirect_to reports_path, alert: e.message
+  end
+
+  def client_status_deliveries
+    authorize ActivityLog, :index?
+    unless current_user&.internal_role?
+      redirect_to reports_path, alert: "Only internal users can view delivery logs."
+      return
+    end
+
+    @client_status_deliveries = ClientStatusDelivery.includes(:client).order(sent_at: :desc, id: :desc).limit(100)
   end
 end

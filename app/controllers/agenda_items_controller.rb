@@ -249,7 +249,7 @@ class AgendaItemsController < ApplicationController
     else
       params.require(:agenda_item).permit(:client_id, :assignee_id, :title, :description, :work_stream, :status,
                                           :priority_level, :complexity, :due_on, :started_on, :completed_at,
-                                          :estimated_cost, :paid, :requested_by, :requested_by_email, :notes,
+                                          :estimated_cost, :paid, :billing_milestone, :requested_by, :requested_by_email, :notes,
                                           :sprint_id, :instruction_id)
     end
   end

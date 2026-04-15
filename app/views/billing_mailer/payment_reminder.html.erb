@@ -1,0 +1,24 @@
+<p>Hello,</p>
+
+<p>
+  This is a polite follow-up regarding an open balance for <strong><%= @client&.name %></strong>:
+  milestone <strong><%= @agenda_item.title %></strong> (<%= number_to_currency(@invoice.amount) %> <%= @invoice.currency %>),
+  issued <%= @invoice.issued_at&.strftime("%B %d, %Y") %>.
+</p>
+
+<% if @invoice.external_url.present? %>
+  <p><%= link_to "View or pay invoice", @invoice.external_url %></p>
+<% end %>
+
+<p>
+  <% case @reminder_day %>
+  <% when 7 %>
+    If payment is already on the way, please disregard this note.
+  <% when 14 %>
+    We wanted to check in and confirm whether you need an updated copy of the invoice or a different payment method.
+  <% when 30 %>
+    We still show this invoice as unpaid. Please let us know if there is anything blocking payment so we can resolve it quickly.
+  <% end %>
+</p>
+
+<p>Thank you,<br><%= ENV.fetch("AGENCY_BILLING_SIGNATURE", "Your delivery team") %></p>

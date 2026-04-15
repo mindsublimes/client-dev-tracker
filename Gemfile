@@ -39,6 +39,9 @@ gem "tzinfo-data", platforms: %i[ windows jruby ]
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", require: false
 
+# Cron schedule for daily jobs (e.g. payment reminders); run `whenever --update-crontab` on the server
+gem "whenever", require: false
+
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 gem "image_processing", "~> 1.2"
 gem "mini_magick"
@@ -46,7 +49,13 @@ gem "mini_magick"
 # AWS SDK for S3 storage
 gem "aws-sdk-s3", require: false
 
+# Optional: Visual Accelerator AI prompt refinement (set OPENAI_API_KEY or OPENAI_ACCESS_TOKEN)
+gem "ruby-openai", require: false
+
 group :development, :test do
+  # Load local .env files in development/test
+  gem "dotenv-rails"
+
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ]
 end

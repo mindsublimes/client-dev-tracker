@@ -4,11 +4,15 @@ class Project < ApplicationRecord
   has_many :agenda_items, dependent: :nullify
   has_many :pages, dependent: :destroy
   has_many :notes, through: :agenda_items, source: :agenda_messages
+  has_many :documentation_pages, dependent: :destroy
+
+  has_many_attached :wireframe_files
 
   validates :client, presence: true
   validates :name, presence: true, length: { maximum: 120 }
   validates :estimated_cost, numericality: { greater_than_or_equal_to: 0 }, allow_blank: true
   validate :end_date_after_start
+  validate :generated_design_url_format, if: -> { generated_design_url.present? }
 
   def label
     base = [name, formatted_date_range].compact.join(' • ')
@@ -32,5 +36,11 @@ class Project < ApplicationRecord
     return if end_date >= start_date
 
     errors.add(:end_date, 'must be after the start date')
+  end
+
+  def generated_design_url_format
+    URI.parse(generated_design_url)
+  rescue URI::InvalidURIError
+    errors.add(:generated_design_url, 'must be a valid URL')
   end
 end

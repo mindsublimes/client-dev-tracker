@@ -1,0 +1,15 @@
+<div class="mb-3">
+  <%= link_to "← Documentation index", project_documentation_pages_path(@project), class: "text-decoration-none small" %>
+  ·
+  <%= link_to @project.name, project_path(@project), class: "text-decoration-none small" %>
+</div>
+<h1 class="h3 mb-2"><%= @page.title %></h1>
+<% if @page.generated_at.present? %>
+  <p class="text-muted small">Last generated <%= @page.generated_at.strftime("%B %d, %Y at %H:%M") %></p>
+<% end %>
+
+<div class="card border-0 shadow-sm mt-3">
+  <div class="card-body prose-like">
+    <%= simple_format(@page.body.presence || "_(Empty)_") %>
+  </div>
+</div>

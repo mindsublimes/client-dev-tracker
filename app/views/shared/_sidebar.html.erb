@@ -40,6 +40,15 @@
             <% end %>
           </li>
 
+          <% if current_user.internal_role? %>
+            <li class="sidebar-item">
+              <%= link_to invoices_path, class: "sidebar-link #{'active' if request.path.start_with?('/invoices')}" do %>
+                <i class="bi bi-receipt"></i>
+                <span>Invoices</span>
+              <% end %>
+            </li>
+          <% end %>
+
           <% unless current_user.client? %>
             <li class="sidebar-item">
               <%= link_to clients_path, class: "sidebar-link #{'active' if request.path.start_with?('/clients')}" do %>

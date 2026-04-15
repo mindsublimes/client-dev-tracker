@@ -3,6 +3,13 @@
     <h1 class="h3 mb-0">Dashboard</h1>
     <p class="text-muted mb-0">Work summary and agenda item analytics</p>
   </div>
+  <% if current_user.internal_role? %>
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge bg-light text-dark"><%= @pending_client_updates_count %> pending client update item(s)</span>
+      <%= button_to 'Send Client Status Updates', send_client_status_updates_reports_path, method: :post, class: 'btn btn-sm btn-primary' %>
+      <%= link_to 'View Delivery Log', client_status_deliveries_reports_path, class: 'btn btn-sm btn-outline-secondary' %>
+    </div>
+  <% end %>
   <%= form_with url: reports_path, method: :get, local: true, class: 'd-flex gap-2 align-items-end' do |form| %>
     <div>
       <%= form.label :start_date, 'From', class: 'form-label small mb-1' %>

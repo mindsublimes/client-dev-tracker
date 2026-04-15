@@ -1,5 +1,7 @@
 class Client < ApplicationRecord
   has_many :agenda_items, dependent: :destroy
+  has_many :invoices, dependent: :destroy
+  has_many :client_status_deliveries, dependent: :destroy
   has_many :projects, dependent: :destroy
   has_many :sprints, through: :projects
 
